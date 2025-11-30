@@ -1,0 +1,1313 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">POLICY DESIGN IN LONG-RUN WELFARE DYNAMICS</title>
+				<funder>
+					<orgName type="full">Max Planck ETH Center for Learning Systems</orgName>
+					<orgName type="abbreviated">CLS</orgName>
+				</funder>
+				<funder>
+					<orgName type="full">Andrew Carnegie Fellowship Program</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Jiduan</forename><surname>Wu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Max Planck Institute for Intelligent Systems, Tübingen and Tübingen AI Center</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="department">Department of Computer Science</orgName>
+								<address>
+									<country>ETH Zürich</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Rediet</forename><surname>Abebe</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Max Planck Institute for Intelligent Systems, Tübingen and Tübingen AI Center</orgName>
+							</affiliation>
+							<affiliation key="aff2">
+								<orgName type="institution">ELLIS Institute</orgName>
+								<address>
+									<settlement>Tübingen</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Moritz</forename><surname>Hardt</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Max Planck Institute for Intelligent Systems, Tübingen and Tübingen AI Center</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Ana-Andreea</forename><surname>Stoica</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Max Planck Institute for Intelligent Systems, Tübingen and Tübingen AI Center</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">POLICY DESIGN IN LONG-RUN WELFARE DYNAMICS</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">26EF39A165D51E234177851FB44011B7</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2025-11-30T00:15+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Improving social welfare is a complex challenge requiring policymakers to optimize objectives across multiple time horizons. Evaluating the impact of such policies presents a fundamental challenge, as those that appear suboptimal in the short run may yield significant long-term benefits. We tackle this challenge by analyzing the long-term dynamics of two prominent policy frameworks: Rawlsian policies, which prioritize those with the greatest need, and utilitarian policies, which maximize immediate welfare gains. Conventional wisdom suggests these policies are at odds, as Rawlsian policies are assumed to come at the cost of reducing the average social welfare, which their utilitarian counterparts directly optimize. We challenge this assumption by analyzing these policies in a sequential decision-making framework where individuals' welfare levels stochastically decay over time, and policymakers can intervene to prevent this decay. Under reasonable assumptions, we prove that interventions following Rawlsian policies can outperform utilitarian policies in the long run, even when the latter dominate in the short run. We characterize the exact conditions under which Rawlsian policies can outperform utilitarian policies. We further illustrate our theoretical findings using simulations, which highlight the risks of evaluating policies based solely on their short-term effects. Our results underscore the necessity of considering long-term horizons in designing and evaluating welfare policies; the true efficacy of even well-established policies may only emerge over time.</p><p>* Alphabetical order. * This assumption states that the return from an intervention should, in principle, be higher than the shock experienced by an individual absent intervention. It is only needed for the max-fg policy, since it is the only one using knowledge of both the return and decay functions.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">INTRODUCTION</head><p>An important application of sequential decision making is the problem of promoting long-run social welfare through a sequence of targeted interventions in a population. Policies for this problem face a two-fold challenge. On the one hand, they must be effective at optimizing the long-term objective. On the other hand, they must appeal to the political and normative expectations of policy makers. In particular, simple policies supported by established moral and political arguments are desirable. Two families of policies have been particularly influential in the context of Western welfare programs. One targets individuals of largest immediate welfare gain. The other targets those most seriously in need. While the former derives from utilitarian moral principles, the latter is associated with Rawl's theory of justice. Many scholars, however, have criticized Rawlsian policy for its presumed failure to maximize social welfare. Indeed, there is no obvious reason why allocating resources to those of lowest welfare should also maximize average welfare in the long run. In this work, we study a stochastic dynamic model of long-term welfare in a population. Surprisingly, under reasonable assumptions on the welfare dynamics, Rawlsian policy turns out to outperform an idealized utilitarian policy that chooses the individual of largest treatment effect at each step. This is the case even though the Rawlsian policy is suboptimal on a short-term horizon.</p><p>Although our motivation is social welfare, our results hold a broader lesson for sequential decision making. Simple policies can be highly effective, but their long-run efficiency may not be apparent on a short time horizon.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.1">OUR CONTRIBUTIONS</head><p>We propose a multi-agent stochastic dynamical model to describe long-run welfare in a population of individuals. Our model draws from classical economic theory of industrial project management, extending so-called attention allocation policies <ref type="bibr" target="#b42">(Radner &amp; Rothschild, 1975)</ref> into social policies.</p><p>In our model, each individual i has a welfare level U i (t) at each timestep t. At each timestep, a social planner allocates an intervention to one or more of N agents using some policy π. The welfare values evolve according to a stochastic dynamical system. Absent an intervention, an individual's welfare decays in expectation according to a function g i (U i (t)) &gt; 0. When the social planner allocates an intervention to an individual, however, the individual's welfare increases in expectation according to a function f i (U i (t)) &gt; 0. We are interested in comparing Rawlsian and utilitarian policies based on the long-term social welfare they achieve, i.e. the asymptotic individual welfare increase, defined as lim t→∞ (U i (t) -U i (0))/t, averaged over all individuals.</p><p>We make two substantive assumptions about welfare dynamics. The well-known Matthew effect <ref type="bibr" target="#b37">(Merton, 1968;</ref><ref type="bibr" target="#b43">Rigney, 2010)</ref>, or "rich-get-richer" while "poor-get-poorer" dynamic, suggests that inequality amplifies over time. We capture this effect by assuming that the return function f i (•) is increasing with welfare, while the decay function g i (•) decreases with welfare. The other assumption is a uniform boundedness assumption: the bounds of the return on intervention and decay functions are the same for all individuals. In other words, no individual can achieve a highest/lowest possible level of return or decay that is much higher or much lower than anyone else.</p><p>Under these assumptions, we find a sufficient condition for comparing policies. This condition states that a policy can, in principle, avoid the decay of any individual's welfare below 0. We call this a survival condition and note that it rests on the functional form and bounds of the return and decay functions. Informally, our main result shows:</p><p>Under the survival condition, Matthew effect, and uniform boundedness, a Rawlsian policy will achieve better long-term social welfare than a utilitarian policy almost surely.</p><p>We complement this result by characterizing a condition in which the reverse is true: under a socalled "ruin condition" (when a policy cannot prevent an individual's unbounded welfare decay), a utilitarian policy will achieve better long-term social welfare than a Rawlsian policy almost surely.</p><p>To prove our results, we present a series of theoretical results that characterize in closed form the rate of growth of individual welfare under Rawlsian and utilitarian policies (Sections 3 and 4). Our proof extends the elegant argument of <ref type="bibr" target="#b42">Radner &amp; Rothschild (1975)</ref>, who studied a fully homogeneous case in which the return and decay functions are constant terms. This generalization in turn requires a non-trivial departure from the original proof including a variant of Lundberg's classical inequality for submartingale processes. The proof may be of independent interest for similar problems arising in sequential decision making and reinforcement learning.</p><p>We illustrate our theoretical results by simulating our model with initial conditions drawn from real data from the Survey of Income and Program Participation (SIPP) of the U.S. Census Bureau in Section 5. We see a delayed effect of a Rawlsian policy, noting that it obtains lower social welfare in the short-term, yet quickly converges to a higher social welfare value than the utilitarian policy. We highlight limitations of our work and directions for future study in Section 6. Finally, we discuss potential extensions of our work (e.g., when the functions f i , g i violate the uniform boundedness assumption) in the appendix.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.2">RELATED WORK</head><p>Welfare-based social policies have a long history in economics research <ref type="bibr" target="#b47">(Sen, 1979;</ref><ref type="bibr" target="#b31">Kaplow &amp; Shavell, 2000;</ref><ref type="bibr" target="#b2">Adler, 2011)</ref>. Although Rawlsian principles are based on distributive justice and egalitarian goals <ref type="bibr" target="#b25">(Harsanyi, 1975;</ref><ref type="bibr" target="#b13">Blau &amp; Abramovitz, 2010)</ref>, debates remain regarding their efficiency as compared to utilitarian policies <ref type="bibr" target="#b4">(Arrow, 1973;</ref><ref type="bibr" target="#b46">Sen, 1976)</ref>. The direct comparison between Rawlsian and utilitarian policies generally remains an open area of research, with some empirical and model-based comparisons made in the context of optimal taxation policies <ref type="bibr" target="#b7">(Atkinson, 1995)</ref> and income inequality <ref type="bibr" target="#b38">(Mongin &amp; Pivato, 2021)</ref>.</p><p>We build on the model proposed by <ref type="bibr" target="#b42">Radner &amp; Rothschild (1975)</ref> in the context of industrial project management, which analyzes the behavior of the system under different attention allocation mechanisms. We generalize and re-purpose their model by equipping it with various functional forms of the return and decay functions that capture societal behaviors and analyzing several additional policies. Our modeling choices include the Matthew effect (Merton, 1968): individuals with higher level of welfare may benefit the most from interventions ("rich-get-richer"), whereas individuals with low wealth experience more severe income shocks absent any interventions from the social planner ("poor-get-poorer"). Such effects have been documented in the context of economic inequality <ref type="bibr" target="#b43">(Rigney, 2010;</ref><ref type="bibr" target="#b49">Stiglitz, 2012)</ref> and optimal taxation policy for reducing societal inequality <ref type="bibr" target="#b6">(Atkinson, 2015)</ref>.</p><p>Closely related to our work are recent modeling frameworks for wealth fluctuations and policy design. Two recent papers develop algorithms for selecting the optimal candidates for intervening, subject to different objectives: <ref type="bibr" target="#b0">Abebe et al. (2020)</ref> analyze two policy objectives in a population that undergoes income shocks and proposes algorithms for allocating subsidies optimally; their objectives aim to minimize the probability of ruin for any given individual. <ref type="bibr" target="#b5">Arunachaleswaran et al. (2022)</ref> analyze the theoretical complexity and give approximation algorithms for the optimal selection of candidates under a social welfare and a Rawlsian objective, considering a transition matrix of welfare states. In addition, <ref type="bibr" target="#b26">Heidari &amp; Kleinberg (2021)</ref> study the optimal policy for allocating interventions in a population with two welfare states (advantaged and disadvantaged), over a finite time horizon. <ref type="bibr" target="#b1">Acharya et al. (2023)</ref> study the effect interventions in a welfare-based dynamic system with feedback loops in societal inequality. Their interventions include allocating subsidies to those among most in need, without a comparison between different types of policies on the social welfare. In contrast, we study the effect of different policies in the long-run, formulating a sufficient condition for a Rawlsian policy to achieve better welfare than a utilitarian policy.</p><p>A related line of work focuses on reinforcement learning algorithms for deriving optimal policies. In particular, <ref type="bibr" target="#b53">Zheng et al. (2020)</ref> propose a framework for a integrating AI into two-level optimization problem in the context of optimal taxation policy, with subsequent work improving the generality of the model <ref type="bibr" target="#b19">(Curry et al., 2023)</ref>. Offline and online algorithms have been proposed for finding optimal policies with fairness considerations <ref type="bibr" target="#b55">(Zimmer et al., 2021;</ref><ref type="bibr" target="#b54">Zhou, 2024)</ref> as well as in contexts with strategic agents <ref type="bibr" target="#b34">Liu et al. (2022)</ref>. The problem of optimal policy selection can be tackled using a continuous-state MDP under the average-reward criteria, with early works considering bounded reward rates <ref type="bibr" target="#b21">(Doshi, 1976)</ref> and subsequent extensions that do not require boundedness <ref type="bibr">(Guo &amp; Rieder, 2006)</ref>. These works find theoretical guarantees for the existence of optimal policies, convergence rates, as well as optimality gaps. Often, such works do not find tractable, closed-form solutions for the optimal policy, but rather build heuristics with theoretical guarantees that can closely approximate an optimal policy. Finally, the problem of allocating resources through objectives such as a maximin rule includes lines of work in fair division <ref type="bibr" target="#b41">(Procaccia &amp; Wang, 2014)</ref> as well as machine learning, often as a constraint in a larger optimization problem <ref type="bibr" target="#b12">(Binns, 2018;</ref><ref type="bibr" target="#b27">Heidari et al., 2019)</ref>. Other works have studied Rawlsian principles under a finite time horizon <ref type="bibr" target="#b22">(Dwork et al., 2012;</ref><ref type="bibr" target="#b52">Zafar et al., 2017;</ref><ref type="bibr" target="#b20">Diana et al., 2021)</ref> or as a static optimization problem <ref type="bibr" target="#b16">(Chen &amp; Hooker, 2020;</ref><ref type="bibr" target="#b48">Stark et al., 2014)</ref>. Some works have studied the long-term effect of fair algorithms in the context of hiring <ref type="bibr" target="#b28">(Hu &amp; Chen, 2018</ref>) and resource-allocation <ref type="bibr" target="#b33">(Liu et al., 2018)</ref>. <ref type="bibr" target="#b32">Kube et al. (2019)</ref> and <ref type="bibr" target="#b8">Azizi et al. (2018)</ref> offer data-driven approaches for optimal assigning subsidies to individuals who experience homelessness; their approach uses a prioritization scheme that aims to minimize the probability of an individual to re-enter homelessness, based on an automated prediction.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">A MODEL OF WELFARE DYNAMICS AND SOCIAL POLICIES</head><p>Preliminaries. Consider N individuals indexed by i = 1, . . . , N . Each individual i has a welfare value of U i (t) at each timestep t ≥ 0. The initial welfare values U i (0) are drawn from a distribution (e.g. a capped normal distribution; different choices of the initial distribution do not change our results). Here, welfare may represent the household income level, expenditure, monthly income, or other variables that define individual welfare.</p><p>An intervention at time t is defined through a vector a a a(t) := (a i (t)) i , where an amount of a i (t) budget is allocated to individual i by the social planner. The exact decision of who receives an amount of budget and how much they receive is decided by the social planner through a social policy. The social planner has a budget M for allocating interventions at every timestep t ≥ 0:</p><formula xml:id="formula_0">i a i (t) = M , for M ∈ N, 1 ≤ M ≤ N, and 0 ≤ a i (t) ≤ 1.</formula><p>In this first analysis, we consider the case when the social planner can only allocate an integer unit to each individual, so a i (t) ∈ {0, 1}.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">A DYNAMIC MODEL OF WELFARE FLUCTUATIONS.</head><p>Absent any intervention, we assume that the welfare of individuals fluctuates at every timestep according to a function g i : R → R + , defined as a function of the welfare value for each individual i. We denote the function g i (•) as the decay function, capturing the welfare decrease in natural conditions (e.g., income shocks due to accidents, economic conditions, natural disasters).</p><p>In contrast, we model the impact of interventions on individuals' welfare at each timestep through a function f i : R → R + , defined for all individuals i. We refer to f i (•) as the intervention return function, capturing the effect of intervening on an individual (e.g., a new job through an employment program, social benefits, cash transfers). Let F t be a σ-algebra denoting the space of events up to time step t. We model the rate of change of individual welfare between different timesteps under interventions as:</p><formula xml:id="formula_1">E[U i (t + 1) -U i (t) | F t ] = a i (t) • f i (U i (t)) -(1 -a i (t)) • g i (U i (t))<label>(1)</label></formula><p>Treatment (a i (t) = 1) in our model has two effects. On the one hand, the treated individual realizes the return f i (U i (t)). On the other hand, the treated individual avoids the decay -g i (U i (t)). The individual treatment effect of allocating an intervention to individual i at time t therefore corresponds to the expression</p><formula xml:id="formula_2">f i (U i (t)) + g i (U i (t)) .</formula><p>Note that this quantity varies both in time and by individual. Conceptually, targeted individuals have a positive return, whereas non-targeted individuals suffer a decay in their welfare.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">SOCIAL POLICIES</head><p>A policy π selects an individual for treatment at each step. This corresponds to setting the coefficients {a i (t)} at each timestep t. We restrict our attention to policies that allocate M units of resources to M individuals with each individual receiving exactly one unit at each time step. Let Top s (S) denote the set of s largest elements of set S.</p><p>A natural utilitarian policy is the one that chooses the individual of largest treatment effect. We call this the max-fg policy:</p><formula xml:id="formula_3">a i (t) = 1, i ∈ Top M {f k (U k (t)) + g k (U k (t))} N k=1 , 0, otherwise.</formula><p>(max-fg) Note that this policy requires full information about individual treatment effects at each time step. This may be an unrealistic requirement in many applications. We call this the max-U policy:</p><formula xml:id="formula_4">a i (t) = 1, i ∈ Top M {U k (t)} N k=1 , 0, otherwise. (max-U)</formula><p>The max-U policy is welfare-based and requires only welfare measurements for its implementation. This utilitarian welfare-based policy directly contrasts with the Rawlsian policy that chooses the individual of minimum welfare at each step. We call this the min-U policy:</p><formula xml:id="formula_5">a i (t) = 1, i ∈ Top M {U k (t)} N k=1 , 0, otherwise.</formula><p>(min-U) <ref type="bibr" target="#b42">Radner &amp; Rothschild (1975)</ref> studied these policies under the names "putting out fires" for min-U and "staying with a winner" for max-U with M = 1.</p><p>We explore a variation of the utilitarian policy that only uses knowledge of the intervention return functions f i (•), i.e. the policy will allocate a unit of effort to the individual with the highest intervention return:</p><formula xml:id="formula_6">a i (t) = 1, i ∈ Top M {f k (U k (t))} N k=1 , 0, otherwise. (max-f)</formula><p>We call this max-f. In contrast to max-fg, the max-f policy requires only partial information about the interventions, only measured through the return on interventions which may be less costly to measure. By analogy, we consider a variant of the Rawlsian policy here that only use knowledge of the decay functions g i (•). That is, the max-g policy will allocate a unit of effort to the individual with the highest decay:</p><formula xml:id="formula_7">a i (t) = 1, i ∈ Top M {g k (U k (t))} N k=1 , 0, otherwise.</formula><p>(max-g) Tie-breaking rule: Among individuals with the same welfare, we favor the one with the lowest index i ∈ [N ]. This applies to all policies. For the policies that use the treatment effect information, max-f and max-fg, we break the tie in favor of the individual with the lowest index. For the max-g policy, among individuals with the same g i value, we break the tie in favor of the individual with the lowest welfare value, arguing that this best captures a Rawlsian principle. When max-g prioritizes the lowest index individual, results do not qualitatively change (see Appendix E, Figure <ref type="figure" target="#fig_4">4</ref>).</p><p>Policy goal. The goal of a policy is to promote long-term social welfare. Our main results focus on the long-term social welfare comparison of Rawlsian and utilitarian policies. We capture long-term social welfare as the average asymptotic welfare gain among individuals, defined as follows. Definition 1 (Long-term social welfare). The long-term average social welfare induced by policy π on a population of N individuals is defined as</p><formula xml:id="formula_8">Rπ := 1 N N i=1 R i , R i := lim t→∞ U i (t) -U i (0) t . (<label>2</label></formula><formula xml:id="formula_9">)</formula><p>where R i defines the rate of growth of individual i, asymptotically.</p><p>Note the welfare level U i (t) depends on the policy π, as π determines a a a(t) at every timestep, and therefore the subsequent U i (t + 1) through the model described in Equation 1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3">MODELING CHOICES</head><p>The comparison between Rawlsian and utilitarian policies depends on an important condition, called a 'survival' condition. Survival means that no individual in a population will obtain negative welfare. The survival condition is necessary and sufficient to obtain a positive probability of survival for all individuals under some policy, as noted by <ref type="bibr" target="#b42">Radner &amp; Rothschild (1975)</ref>. Such a policy only exists under the survival condition, and in fact, Rawlsian policies are examples as we will show later in Section 3. This is a sufficient condition for comparing policies in the long run.</p><p>Formally, the survival condition can be stated in terms of a weighted sum of the f i (•) and g i (•) function bounds (assuming those exist): Assumption 1 (Survival condition). We assume ζ((f - 1 , . . . , f - N ), (g + 1 , . . . , g + N )) &gt; 0 where ζ : R 2N → R is defined as</p><formula xml:id="formula_10">ζ((x 1 , . . . , x N ), (y 1 , . . . , y N )) := M - N i=1 y i x i + y i   N j=1 1 x j + y j   -1 ,<label>(3)</label></formula><p>and</p><formula xml:id="formula_11">f + i := sup f i (x) &gt; 0 , f - i := inf f i (x) &gt; 0 , g + i := sup g i (x) &gt; 0 , g - i := inf g i (x) &gt; 0 .</formula><p>Next, we formally state the modeling conditions that capture a Matthew effect, as motivated in the introduction, as well as a uniform boundedness condition.</p><p>Assumption 2 (Modeling conditions).</p><p>(a). (Rich-get-richer) For i = 1, . . . , N , we assume that the function f i (x) is non-decreasing.</p><p>(b). (Poor-get-poorer) For i = 1, . . . , N , we assume that the function g i (x) is non-increasing.</p><p>(c). (Uniform boundedness) For i = 1, . . . , N , we assume</p><formula xml:id="formula_12">f - i ≡ f -, f + i ≡ f + , g - i ≡ g -, g + i ≡ g + for constants f -, f + , g -, g + .</formula><p>We note that this assumption does not require that the functions f i , g i be the exact same for all individuals, but rather just their limits.</p><p>Finally, in addition to the two assumptions described above, our results require some standard regularity conditions, formalized below. Denote the welfare variation between two consecutive timesteps by</p><formula xml:id="formula_13">Z i (t + 1) := U i (t + 1) -U i (t), ∀i ∈ [N ].</formula><p>We note that U i (t) and Z i (t) are random variables with respect to a stochastic process of welfare fluctuations over time (e.g., income shocks).</p><p>Assumption 3 (Regularity conditions). Consider a probability space (Ω, F, P), where Ω is the space of possible outcomes of welfare levels, F is a σ-algebra denoting the space of events, and P : F → [0, 1] is a probability measure function. We assume the following properties:</p><p>(a). The welfare random variable</p><formula xml:id="formula_14">U i (t) is F t -measurable for ∀i ∈ [I] , t ∈ N * , for F 0 ⊂ F 1 ⊂ • • • an increasing sub σ-field of F .</formula><p>(b). The variation random variable Z i (t + 1) is integer-valued, mutually independent (given a a a(t)), and uniformly bounded, i.e.</p><formula xml:id="formula_15">|Z i (t + 1)| ≤ b, ∀i ∈ [I], t ∈ N for some constant b &gt; 0 . (c). There exist constants z * , l &gt; 0 with 0 &lt; l &lt; 1 s.t. P(Z i (t + 1) ≥ z * | F t ) ≥ l, P(Z i (t + 1) ≤ -z * | F t ) ≥ l for any i ∈ [N ], any F t , ∀t ≥ 0.</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">POLICY COMPARISONS IN TERMS OF LONG-TERM SOCIAL WELFARE</head><p>Our main result compares the long-term social welfare of Rawlsian and utilitarian policies, under the natural behavioral model of welfare fluctuations described in Section 2.1.</p><p>Theorem 1 (Main result). For a population of N individuals whose welfare (U i (t)) i fluctuates according to the model in equation 1, under regularity, modeling, and survival conditions (Assumptions 1, 2, 3), a Rawlsian policy will achieve better long-term social welfare than a utilitarian policy: RRawlsian ≥ Rutilitarian a.s.</p><p>where the Rawlsian and utilitarian policies are defined in the same informational contexts, i.e.</p><p>(min-U, max-U), (max-g, max-f), (max-g, max-fg).</p><p>Proof sketch. The proof of Theorem 1 includes a series of results on the individual rates of growth for different policies. First, we compute the individual rate of growth under the Rawlsian policy to be equal for all individuals (Theorem 3). The survival condition implies the existence of a policy that prevents any individual's welfare from decaying below 0. In fact, it implies something even stronger: under survival, a Rawlsian policy can 'lift' everyone's welfare unboundedly:</p><formula xml:id="formula_16">lim t→∞ min i U i (t) = ∞ almost surely.</formula><p>This helps us show that the welfare gap between any two individuals vanishes asymptotically, obtaining the same individual rates of growth for all individuals. In contrast, a utilitarian policy tends to fixate on a single individual and repeatedly allocate an intervention to him, while ignoring the rest of the population. We show this formally in Theorem 4: we leverage a generalization of Lundberg's inequality for submartingale processes to lowerbound the probability that a utilitarian policy repeatedly allocates interventions to the same high-welfare individuals. Finally, the individual rates of growth and uniform boundedness allow us to compute and compare the long-term social welfare under different policies, see Corollaries 1, 2. Essentially, a Rawlsian policy obtains better social welfare in the long-run than utilitarian policies as long as</p><formula xml:id="formula_17">lim x→+∞ g i (x) ≤ lim x→-∞ g i (x)</formula><p>, which is true by our "poor-get-poorer" modeling condition. It is noteworthy that the result holds regardless of the variation of our policies: whether the social planner has knowledge of (f i ) i , (g i ) i or not, the policy comparison remains the same under our modeling conditions. Detailed proofs for all results can be found in Appendix A.</p><p>In cases where the survival condition does not hold, we find a natural complement for our theory: we define a "ruin condition" as a state of the model in which no policy can prevent all individuals from decaying below 0. Our theory under survival naturally extends for this ruin condition, showing that a utilitarian policy will achieve better long-term social welfare (see Appendix B for the formal theory).</p><p>Theorem 2 (Policy comparison under a ruin condition). For a population of N individuals whose welfare (U i (t)) i fluctuates according to the model in equation 1, under regularity, modeling, and ruin conditions (Assumptions 2, 3, 4), a utilitarian policy will achieve better long-term social welfare than a Rawlsian policy:</p><p>RRawlsian ≤ Rutilitarian a.s.</p><p>where the Rawlsian and utilitarian policies are defined in the same informational contexts, i.e.</p><p>(min-U, max-U), (max-g, max-f), (max-g, max-fg).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">INDIVIDUAL WELFARE RATE OF GROWTH UNDER DIFFERENT POLICIES</head><p>In this section, we characterize in closed form the rate of growth of welfare under different policies for all individuals, that is, proving that</p><formula xml:id="formula_18">R i = lim t→∞ (U i (t) -U i (0))/t converges to closed-form solutions for all i ∈ [N ].</formula><p>We then compute the long-term average social welfare achieved by all policies and compare them against a baseline defined by a random allocation policy.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">INDIVIDUAL WELFARE UNDER THE RAWLSIAN POLICY</head><p>Theorem 3. Under regularity (Assumption 3), modeling conditions (Assumption 2.(a),(b)), and the survival condition (Assumption 1), a Rawlsian policy π ∈ {min-U, max-g} leads to the following closed-form solution of the individual rates of growth:</p><formula xml:id="formula_19">R i = ζ((f + 1 , . . . , f + N ), (g - 1 , . . . , g - N )</formula><p>), i = 1, . . . , N , a.s. Corollary 1. With the addition of the uniform boundedness condition from Assumption 2.(c), we can simplify the individual rates of growth, obtaining the long-term social welfare value for the Rawlsian policy:</p><formula xml:id="formula_20">Rmin-U = Rmax-g = M N f + - N -M N g -a.s.</formula><p>Proof sketch. Under the survival condition, we prove that the minimum welfare level will be lifted unboundedly over time. We model the welfare gap between the treated and untreated individuals and show that this gap vanishes almost surely by applying the law of large numbers. We conclude by adapting a convergence argument first introduced by <ref type="bibr" target="#b42">Radner &amp; Rothschild (1975)</ref>, obtaining that a Rawlsian policy achieves the same long-run welfare of everyone under our modeling conditions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">INDIVIDUAL WELFARE UNDER THE UTILITARIAN POLICIES</head><p>Theorem 4. Under regularity (Assumption 3) and modeling conditions (Assumption 2.(a),(b)) and as long as</p><formula xml:id="formula_21">f i (•) + g i (•) is increasing for all i ∈ [N ]</formula><p>, * a utilitarian policy π ∈ {max-U, max-fg, max-f} leads to the following closed-form solution of the individual rates of growth:</p><formula xml:id="formula_22">R i = f + i , i ∈ J , -g + i , i / ∈ J , a.s.</formula><p>where J is a set of M random variables with values in [N ] whose exact value depends on U (0), (f i (•)) i , and (g i (•)) i . In other words, exactly M individuals achieve an asymptotic rate of growth equal to f + i , whereas all others achieve -g + i .</p><p>Corollary 2. With the addition of the uniform boundedness condition from Assumption 2.(c), we can simplify the individual rates of growth, obtaining the social welfare value</p><formula xml:id="formula_23">Rmax-U = Rmax-f = Rmax-fg = M N f + - N -M N g + a.s.</formula><p>Proof sketch. For the individuals chosen by the utilitarian policy at a time t 0 , we upperbound the probability of an individual obtaining negative welfare at a finite point in time (a variable that we model as a submartingale), for any F t and individual i. We make use of a generalized Lundberg's inequality <ref type="bibr" target="#b35">(Lundberg, 1903;</ref><ref type="bibr" target="#b18">Cramér, 1959;</ref><ref type="bibr" target="#b39">Moriconi, 1986)</ref> for submartingales, for which we provide an adapted version for our model and a new proof. We then use it to show that the probability that it will be chosen again afterwards (a i (t) ≡ 1, t ≥ t 0 ) is lower-bounded by some positive constant. Asymptotically, the probability of M individuals being targeted by a utilitarian policy approaches 1, and hence we obtain the asymptotic convergence of the individual rates of growth under our modeling conditions.</p><p>Random policy. Finally, we compare our policies with a baseline policy that randomly chooses M individuals to allocate an intervention at every timestep. Theorem 5. Under regularity, modeling, and survival conditions (Assumptions 1, 2, 3), the random policy leads to the following closed-form solution of the individual rates of growth and long-term social welfare:</p><formula xml:id="formula_24">Rrandom = R i = M N f + - N -M N g -, i = 1, . . . , N , a.s.</formula><p>Proof sketch: Under the assumption of uniform boundedness, we may lowerbound the rate of welfare increase at every timestep by a positive quantity,</p><formula xml:id="formula_25">E[U i (t + 1) -U i (t) | F t ] ≥ M N f - i -(1 - M N )g + i &gt;</formula><p>0 under the random policy. This allows us to show that, in the limit, the welfare value of every individual will increase unboundedly. At the same time, since individuals are chosen randomly at each time, the welfare gap between individuals converges to 0, just like in the proof of Theorem 3. We follow a similar proof structure henceforth, detailed in Appendix A.</p><p>Policy comparison: Our results show that Rawlsian and random policies will achieve better long-term social welfare than utilitarian policies under the aforementioned conditions. This concludes our argument for the main result in Theorem 1. Furthermore, our subsequent results show that the comparison holds no matter the informational context (whether the social planner uses only welfare information in defining policies, or also has access to the treatment effect through f i , g i ). Furthermore, when the survival condition is not satisfied, we find a complementary condition under which a policy reversal occurs. We provide a formal theory for this result in Appendix B. We extend our results to include different functional forms for the treatment effect function (Appendix D) and allocate proportional interventions at each timestep (Appendix F). We explore different combinations of monotonicities of return/decay functions through simulations in Appendix G.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">ILLUSTRATION OF THEORETICAL RESULTS AND MODELING CHOICES</head><p>We illustrate our theoretical results through simulations using a real-world dataset. We compare the average social welfare under a finite time horizon for all proposed policies.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">SIMULATIONS OF POLICIES ON REAL DATA UNDER FINITE TIME HORIZON</head><p>We use data collected from the Survey of Income and Program Participation (SIPP) (Bureau, 2023), which is a longitudinal survey of households in the U.S. containing variables related to economic well-being such as income, employment, etc. Among numerous indices, we use the income variable as a proxy for the initial individual welfare level, (U i (0)) i . We group the whole population 39, 720 into 13 bins and treat every 200 samples as one individual, and every $1, 000 as one welfare unit in our model. In the end, we obtain a population of 206 individuals. We simulate an instance of the general model from equation 1 with Gaussian noise, specified as:</p><formula xml:id="formula_26">U i (t + 1) -U i (t) = a i (t) • f i (U i (t)) -(1 -a i (t)) • g i (U i (t)) + ξ i (t), ∀t ≥ 0, i ∈ [N ]. (4)</formula><p>where {ξ i (t)} i,t ∼ N (0, σ 2 ) and capped within uniform bounds, for some noise parameter σ. We generate homogeneous bounds f -, f + , g -, g + , and then generate the functions f i (•), g i (•) as segment linear functions. Our results are averaged over 100 draws, reporting standard deviation in the error bands. See Appendix C for further experimental details.</p><p>We measure social welfare at timestep t as the individual growth rate up to time t averaged over all individuals (equation 2 up to time t).</p><p>The average social welfare (solid lines) converges to the theoretical expected welfare (dashed lines) for all policies (Figure <ref type="figure">1</ref>). Furthermore, Rawlsian policies (min-U and max-g) have a lower shortterm social welfare than utilitarian policies (max-U, max-f, max-fg). After a few hundreds timesteps, this trend is reversed, showing convergence to the theoretical social welfare value. Rawlsian policies achieve better welfare than utilitarian policies in the long-run, which is implied by Theorem 1. The random policy behaves similarly to the Rawlsian policy (as Theorem 5 would suggest), yet with a slower convergence rate. This disadvantage vanishes as the budget M increases, as indicated by Figure <ref type="figure">1b</ref>. Figure <ref type="figure" target="#fig_1">2</ref> in Appendix B illustrates the finite time horizon under the ruin condition, showcasing a reversal of the Theorem 1 result (for a formal statement, see Theorem 2). We also showcase the complexity of evaluating policies in heterogeneous cases (i.e., where the bounds of the return and decay functions f i , g i are non-uniform) in Appendix H. </p><p>Figure <ref type="figure">1</ref>: Social welfare as the finite-time growth rate averaged over all individuals, for all policies (solid lines), as well as theoretical expected growth rate, asymptotically (dashed lines) for budget M = 1 (a) and M = 10 (b).</p><p>All simulations are ran on commodity hardware, using Python 3.8. All code and data used in our simulations is available in this repository.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">DISCUSSION</head><p>The problem of optimal policy design remains highly relevant, as several countries continue to implement changes in their social benefits allocation schemes. A prominent example is Austria, which has shifted from a welfare state approach that targeted those most in need to an "inactivity trap" approach that targets those most likely to (re)enter the labor market <ref type="bibr" target="#b3">(Allhutter et al., 2020;</ref><ref type="bibr" target="#b17">Christl &amp; De Poli, 2021;</ref><ref type="bibr">International)</ref>. In 2019, Austria introduced the New Social Assistance policy that reduced benefits to individuals with low language skills or larger number of dependents.</p><p>In 2020, it introduced algorithmic profiling by first predicting individuals' probability of re-entering the labor market, and second by offering most support to those with intermediate chances. Both such policies have the purpose of shifting support from the most in need to those with the highest chance of benefiting from such support, measured through their integration in the labor market in the near future. In essence, such policies have shifted from a Rawlsian approach to social welfare <ref type="bibr" target="#b14">(Bufacchi &amp; Garmise, 1995)</ref> to a more utilitarian view of social benefits <ref type="bibr" target="#b17">(Christl &amp; De Poli, 2021)</ref>.</p><p>Our work demonstrates that choosing the right policy framework is subtle. In particular, our results motivate the necessity of long-run welfare comparisons of policies that a short-term analysis will necessarily miss. Whereas on the short-term horizon a utilitarian policy prevails, it can result in lower social welfare than a Rawlsian approach in the long-run, under reasonable conditions. We characterize such conditions in closed-form, allowing a long-term policy comparison. In particular, the survival condition is a sufficient condition for a Rawlsian policy to achieve better social welfare in the long-run when the population of individuals satisfies homogeneous bounds on the intervention return or welfare decay.</p><p>To apply our model, the social planner does not need to know the exact form of f i , g i for each individual. Rather, they can estimate general trends and effects of income shocks and interventions through small pilot experiments or through acquiring domain knowledge, e.g., through poverty trackers or longitudinal studies of intervention effects on income <ref type="bibr" target="#b24">(Garfinkel, 2021)</ref>. Experimentation through small pilot experiments is often considered a necessary precursor of policy deployment <ref type="bibr">(Office, 2003;</ref><ref type="bibr" target="#b29">Huitema et al., 2018)</ref>, rapidly increasing as a method for policy design and evaluation <ref type="bibr" target="#b10">(Banerjee et al., 2016;</ref><ref type="bibr">2017;</ref><ref type="bibr" target="#b51">Webber &amp; Prouse, 2018)</ref>. Then, the estimates for the return and decay functions can be used as plug-in estimates in the survival or the ruin condition. Future work could combine effective estimation methods for the return and decay functions with long-term policy assessments.</p><p>Our analysis rests on several modeling conditions, which could be explored in future work. We analyze several variations in the Appendix: we provide a complementary theory for the case when the survival condition is not satisfied (Appendix B), and we explore variations of our modeling assumptions: non-monotonic treatment effect function f i +g i (Appendix D), a different tie-breaking rule (Appendix E), proportional interventions at each timestep (Appendix F), different combinations of monotonicities of return/decay functions (Appendix G), and the case of heterogenous limits of the intervention and return functions f i , g i (Appendix H).</p><p>Overall, our theoretical framework provides versatile tools for exploring different modeling conditions as well as policy variations. These contributions open new directions for future work in the context of sequential decision-making and optimal policy design, with applications in social programs evaluation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A COMPLETE PROOFS</head><p>This section contains complete proofs to all results stated in the main paper. First of all, we introduce two bounds that will be repeatedly used in the following proofs:</p><p>First, consider a weighted sum of utilities:</p><formula xml:id="formula_28">Ū (t) := i w i • U i (t) , w i := 1 f - i + g + i   N j=1 1 f - j + g + j   -1</formula><p>.</p><p>(5)</p><p>The increment in the weighted utility can be computed in expectation as:</p><formula xml:id="formula_29">E Ū (t + 1) -Ū (t) | F t = i E[ Z(t + 1) | F t ] = i w i • (a i (t) • f i (U i (t)) -(1 -a i (t)) • g i (U i (t))) ≥ i w i • a i (t) • f - i -(1 -a i (t))g + i (<label>6</label></formula><formula xml:id="formula_30">)</formula><p>where Z(t + 1) := i w i • Z i (t + 1). We note that the last term of equation 6 is solely a function of f - i i and g + i i . Thus, we obtain</p><formula xml:id="formula_31">E Ū (t + 1) -Ū (t) | F t ≥ ζ (f - 1 , . . . , f - N ), (g + 1 , . . . , g + N ) .<label>(7)</label></formula><p>Similarly, we define a weighted sum of utilities using slightly different weights:</p><formula xml:id="formula_32">Ũ (t) := i wi • U i (t), wi := 1 f + i + g - i   N j=1 1 f + j + g - j   -1<label>(8)</label></formula><p>Similarly, we obtain the following upper bound for Ũ (t):</p><formula xml:id="formula_33">E Ũ (t + 1) -Ũ (t) | F t = N i=1 wi • (a i (t) • f i (U i (t)) -(1 -a i (t)) • g i (U i (t))) ≤ N i=1 wi • a i (t) • f + i -(1 -a i (t))g - i .<label>(9)</label></formula><p>We observe that the last term of equation 9 can be written as the function ζ with switched parameters as compared to equation 7:</p><formula xml:id="formula_34">E Ũ (t + 1) -Ũ (t) | F t ≤ ζ((f + 1 , . . . , f + N ), (g - 1 , . . . , g - N )). (<label>10</label></formula><formula xml:id="formula_35">)</formula><p>Note that both bounds from equations equation 7 and equation 10 only use the assumption on the bounds of f i (•) and g i (•) in Assumption 1, and hence hold under any of the aforementioned social policies and they will be crucial for the asymptotic behavior of the system.</p><p>Proof of Theorem 3. We first prove the theorem for the welfare-based policy min-U, and then adapt the proof for the effect-based policy max-g.</p><p>We note that the limit conditions from Assumption 1 allow us to follow the conditions stated in <ref type="bibr">Rothschild (1975b)</ref>:</p><formula xml:id="formula_36">f + i := sup f i (x) &gt; 0 , f - i := inf f i (x) &gt; 0 , g + i := sup g i (x) &gt; 0 , g - i := inf g i (x) &gt; 0 . Remember that Z i (t + 1) := U i (t + 1) -U i (t), ∀i ∈ [N ]</formula><p>. Thus, conditioning on individual i getting or not getting an intervention and using the monotonicity assumptions, we obtain from the model in equation 1</p><formula xml:id="formula_37">E[Z i (t + 1)|a i (t) = 1, F t ] = f i (U i (t)) ≥ f - i , -g - i ≥ E[Z i (t + 1)|a i (t) = 0, F t ] = -g i (U i (t)) ≥ -g + i , ∀t.<label>(11)</label></formula><p>With these conditions, together with the regularity and survival conditions, we substitute Ū (t) in <ref type="bibr">Rothschild (1975a)</ref> with Ū (t) defined in equation 5 and apply Theorem 1 from <ref type="bibr">Rothschild (1975a)</ref>. The lower bound on equation 5 obtains the first part of the result in Theorem 1 <ref type="bibr">(Rothschild, 1975a)</ref>:</p><formula xml:id="formula_38">lim inf t→∞ U i (t)/t ≥ ζ a.s. for i ∈ [N ], which immediately implies that lim inf t→∞ min i U i (t) → +∞ a.s. for i ∈ [N ].</formula><p>Then, we need the following lemma.</p><p>Lemma 1. Suppose {Y t } t∈[T ] are random variables and F T -measurable, for any</p><formula xml:id="formula_39">T ≥ 1. Suppose |Y t | ≤ B and E[Y t | F t-1 ] = µ t with -B &lt; µ ≤ µ t ≤ λ &lt; B for ∀t ∈ [T ]</formula><p>where B &gt; 0, µ, λ are constants. Then</p><formula xml:id="formula_40">lim inf T →∞ T t=0 Y t T = lim inf T →∞ T t=0 µ t T ≥ µ , a.s. lim sup n→∞ T t=0 Y t T = lim sup n→∞ T t=0 µ t T ≤ λ , a.s.</formula><p>Proof of Lemma 1. The first inequality is immediate from Theorem 40 in <ref type="bibr" target="#b23">(Freedman, 1973)</ref> with</p><formula xml:id="formula_41">X t = Y t + B , M t = µ t + B ≥ µ + B</formula><p>and the second inequality is obtained similarly by setting</p><formula xml:id="formula_42">X t = B -Y t , M t = B -µ t ≥ B -λ instead.</formula><p>Now we continue with the proof for Theorem 3. We apply Lemma 1 with Y t = Ũ (t+1)-Ũ (t), B = b, where b is the upperbound on Z i (t + 1) from the regularity conditions (Assumption 3), and</p><formula xml:id="formula_43">µ t = E i wi (a i (t)(f i (U i (t)) + g i (U i (t))) -g i (U i (t))) | F t . Since lim t→∞ min i U i (t) = ∞, we obtain lim t→∞ U i (t) = +∞ for all i ∈ [N ]. Hence, we get lim t→∞ f i (U i (t)) = f + i , lim t→∞ g i (U i (t)) = g - i .</formula><p>A simple calculation finds that lim</p><formula xml:id="formula_44">t→∞ µ t = ζ((f + 1 , . . . , f + N ), (g - 1 , . . . , g - N )) a.s. (<label>12</label></formula><formula xml:id="formula_45">)</formula><p>Since µ t is uniformly bounded for ∀t ≥ 0, we know that lim t→∞ µ t = lim T →∞ T t=0 µt T</p><p>, and therefore</p><formula xml:id="formula_46">lim T →∞ T t=0 µ t T = ζ((f + 1 , . . . , f + N ), (g - 1 , . . . , g - N )) a.s.<label>(13)</label></formula><p>Hence we obtain:</p><formula xml:id="formula_47">lim T →∞ T t=0 Y t T = lim T →∞ Ũ (T + 1) T = ζ((f + 1 , . . . , f + N ), (g - 1 , . . . , g - N ))<label>(14)</label></formula><p>Next, apply Lemma 1 from <ref type="bibr">Rothschild (1975b)</ref> and for ∀j ∈ [N ], we have lim</p><formula xml:id="formula_48">T →∞ Ũ (T + 1) T = lim T →∞ i wi • U i (T ) T - U j (T ) T + U j (T ) T = lim T →∞ U j (T ) T ,</formula><p>finalizing the proof of Theorem 3 for the welfare-based Rawlsian policy min-U. Note that Lemma 1 from <ref type="bibr">Rothschild (1975b)</ref> essentially shows that the welfare gap between any two individuals converges to 0 over time, so we have used that lim</p><formula xml:id="formula_49">T →∞ i Ui(T ) T - Uj (T ) T = 0, ∀i, j.</formula><p>Intuitively, this is natural under a Rawlsian policy that always 'lifts' the lowest welfare individuals, under our bounded welfare conditions. Finally, we also used that i wi = 1, by definition.</p><p>For the effect-based Rawlsian policy max-g, we note that if g i is strictly decreasing for all i, then the individual targeted at each timestep t will be the exact same individual in min-U and max-g. Our modeling conditions only require that g i is decreasing, but not strictly. Therefore, if the function g i is constant for a set of individuals with welfare values under some threshold τ , as long as the targeted individuals will be the one with the actual lowest welfare, min-U and max-g still coincide. Under the tie-breaking rule of choosing the individuals with the lowest welfare, the proof for computing R i 's under max-g reduces to our proof for min-U. Under different tie-breaking rules (e.g., choosing the individual with the smallest index) for max-g, the policies might actually differ in the asymptotic rates of growth. We argue that a tie-breaking rule targeting the individuals with lowest welfare under max-g policy is most natural, since it naturally applies Rawlsian principles when information gathered from g i does not help differentiate individuals.</p><p>Finally, the corollary follows immediately under the uniform boundedness assumptions on the bounds of f i , g i :</p><formula xml:id="formula_50">R i = ζ((f + 1 , . . . , f + N ), (g - 1 , . . . , g - N )) = M - i g - i f + i + g - i • i 1 f + i + g - i -1 (15) = M -N • g - f + + g -• N f + + g - -1 (16) = M N • f + - N -M N • g -<label>(17)</label></formula><p>Proof of Theorem 4. We first note the intuition behind the proof, followed by the detailed technical details. We note that while max-U is also known as the 'staying with a winner' policy in <ref type="bibr" target="#b42">Radner &amp; Rothschild (1975)</ref>, the proof technique does not generalize under non-constant functions f i , g i .</p><p>To this end, we introduce a novel proof that can characterize the individual rates of growth under any informational contexts and for any functions that follow our regularity and modeling conditions (Assumptions 2(a),(b) and 3).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Intuition:</head><p>The main proof idea hinges on showing that a utilitarian policy tends to choose the same individuals to whom it initially allocates interventions. While the initial conditions do not change the convergence results, whoever were the first M individuals to obtain an intervention at t = 0 have gained an advantage (a positive drift in the random process), whereas everyone else has a disadvantage (a negative drive in the random process). We bound the probability of a policy to reinforce its earlier preferred choices by the probability that an individual never drop below its initial welfare level while the other individuals never grow below their initial welfare level. Then, asymptotically, the rates of growth will converge in the following way: some fixed subpopulation converges to the maximum welfare f + , whereas everyone else converges to the minimum decay g -.</p><p>First, consider the max-fg policy. Without loss of generality, consider the individual i being chosen at timestep 0 (a i (0) = 1). We will apply Lemma 3 for the welfare process {X i (t)} under an intervention, i.e., X i (t) = U i (t)|a i (t) = 1 for all t, by showing that X i (t) is a submartingale and lower-bounding the probability of the welfare level decaying beyond its initial level, X i (0) (equal to the welfare initial level U i (0). This defines a random process given that the individual i will be chosen over and over again (the process is conditioned on a i (t) = 1). First, the process</p><formula xml:id="formula_51">{X i (t)} is a submartingale since, conditioned on a i (t) = 1, E[X i (t + 1)|F t ] = E[U i (t + 1)|F t , a i (t) = 1] = U i (t) + f i (U i (t)) &gt; U i (t) = X i (t),<label>(18)</label></formula><p>and note the uniform bound for (Z i (t)) i,t in regularity conditions (Assumption 3(c)) By an easy induction on t, we get that |X i (t)| ≤ ∞, ∀t, noting that X i (0) = U i (0) &lt; ∞ by definition of the initial conditions.</p><p>Given our regularity conditions (Assumption 3), we may now apply Lemma 3 in a particular way: we consider U i (0) = u for some u ∈ R, and we start the welfare process at t = 1. Note that {X i (t)} t≥1 is also a submartingale. Then, instead of bounding the probability of ruin, we bound the probability of X i (t) falling under the threshold u (where u := U i (0)). We do that by the substitution W t = X i (t) -u, ∀t ≥ 1, and W t is still a submartingale. Thus, we can apply Lemma 3 to obtain</p><formula xml:id="formula_52">ψ(X i (1)) ≤ exp(-r * • (X i (1) -u)),<label>(19)</label></formula><p>where ψ(X i (1)) = P(T</p><formula xml:id="formula_53">(X i (1)) &lt; ∞), T (X i (1)) = min{t ≥ 1 : X i (t) ≤ u}.</formula><p>In a similar fashion, we now consider all other individuals j who were not intervened on at the first timestep t = 0. For each of these, the process {Y j (t)}, where Y j (t) := U j (t)|a j (t) = 0 (conditioned on j not being chosen again) is a supermartingale: Again, we can apply Lemma 3 for the process {-Y j (t)} t≥1 (which is now a submartingale) and ruin threshold -u to obtain</p><formula xml:id="formula_54">E[Y i (t + 1)|F t ] = E[U i (t + 1)|F t , a i (t) = 0] = U i (t) -g i (U i (t)) &lt; U i (t) = Y i (t)<label>(20</label></formula><formula xml:id="formula_55">ψ(-Y j (1)) ≤ exp(-r * • (u -Y j (1))),<label>(21)</label></formula><p>where ψ(-Y j (1)</p><formula xml:id="formula_56">) = P(T (Y j (1)) &lt; ∞), T (Y j (1)) = min{t ≥ 1 : -Y j (t) ≤ -u}.</formula><p>Next, we lower bound the probabability that the individuals who were chosen at timestep 0, denoted as set S, will continue to be chosen at every timestep. To do so, we note that this probability is equal to the probability that every i ∈ S is chosen at every subsequent t ≥ 1 and all other j / ∈ S are not chosen at every t ≥ 1. Among all events that comprise this probability, one of them is the event in which X i (t) ≥ u and X j (t) ≤ u, ∀j / ∈ S (remember here that X i (t) = U i (t)|a i (t) = 1 and Y j (t) = U j (t)|a j (t) = 0, for j / ∈ S). Thus,</p><formula xml:id="formula_57">P(a i (t) = 1 and a j (t) = 0, ∀j / ∈ S, ∀t ≥ 1) ≥ P(X i (t) ≥ u and Y j (t) ≤ u, ∀j / ∈ S, ∀t ≥ 1) (22)</formula><p>The righthandside consists of independent events w.r.t. t, since we have conditioned already on the intervention, so we can further compute it as</p><formula xml:id="formula_58">i∈S P(X i (t) &gt; u, ∀t ≥ 1) • j / ∈S P(Y j (t) &lt; u, ∀t ≥ 1) = i∈S (1 -P(∃T &lt; ∞ s.t. X i (T ) ≤ u)) • j / ∈S (1 -P(∃T &lt; ∞ s.t. Y j (T ) ≥ u))<label>(23)</label></formula><p>Finally, we lowerbound equation 23 by the bound we obtained by our Lundberg-type inequality for the welfare process:</p><formula xml:id="formula_59">i∈S (1 -P(∃T &lt; ∞ s.t. X i (T ) ≤ u)) • j / ∈S (1 -P(∃T &lt; ∞ s.t. Y j (T ) ≥ u)) (24) ≥ i∈S (1 -ψ(X i (1))) • j / ∈S (1 -ψ(-Y j (1))) (25) ≥ i∈S (1 -exp(-r * • (X i (1) -u))) • j / ∈S (1 -exp(-r * • (u -Y j (1))))<label>(26)</label></formula><p>Our regularity conditions ensure that equation 26 is lowerbounded by some positive constant p * i &gt; 0: Assumption 3 states that ∃z * , l &gt; 0 s.t. P(Z i (t + 1) ≥ z * |F t ) ≥ l and P(Z i (t + 1) ≤ -z * |F t ) ≥ l. Since l &gt; 0, this offers a strictly positive lower bound on equation 26. Furthermore, p * i does not depend on F 0 but it may depend on the initial individual i that was intervened on at timestep 0. We take the minimum of p * i among all individuals i ∈ [N ] (since any of them could have been intervened on at timestep 0), and obtain p * := min{p * i } &gt; 0. Then, note that the probability of individual i being chosen for all t ≥ 0 also depends the rule of max-fg and the tie-breaking rule of choosing the smallest index, which will ensure the individual being constantly chosen once the f i (U i (t)) + g i (U i (t)) ≥ f j (U j (t)) + g j (U j (t)) won't be violated for all t ≥ 0. This is true since in addition to the modeling condition that states that g i (•) is decreasing, we also assumed that</p><formula xml:id="formula_60">f i (•) + g i (•) is increasing.</formula><p>As time grows, the probability of the utilitarian policy fixating on one single individual is lowerbounded by 1 -(1 -p * ) m where m denotes the number of times the set of individuals who receive the intervention changes, which converges to 1 as m → ∞.</p><p>Lastly, we prove that for an individual i ∈ S with a i (t) = 1 for all t ≥ 0 a.s., we have R i = f + a.s., and for an individual j with a j (t) = 0 for all t ≥ 0 a.s., j / ∈ S, we have R j = -g + a.s.</p><p>In doing so, we apply Lemma 1 repeatedly:</p><p>• First, for individual i ∈ S that gets chosen at the first timestep, we set Y i = U i (t + 1) -U i (t), µ = f -and obtain from Lemma 1 that lim t→∞ U i (t) = +∞. For the same individual, we can apply Lemma 1 again with µ = λ = f + , which shows convergence of (U i (t) -U i (0))/t to f + . We then note that lim t→∞ (U i (t) -U i (0))/t = R i = f + .</p><p>• Second, for any individual j / ∈ S, we set Y t = U j (t + 1) -U j (t) and λ = -g -and obtain from Lemma 1 that lim t→∞ U j (t) = -∞. Finally, we apply Lemma 1 again for all such j with µ = λ = -g + , which shows convergence of (U j (t) -U j (0))/t to -g + . We then note that lim t→∞ (U j (t) -U j (0))/t = R j = -g + .</p><p>We note that the proof goes through in the exact same way for the max-U and max-f policies, since the only place the functions f i and g i play a role is in the tie-breaking rule: when f i is increasing and the tie-breaking rule always chooses the individual with the lowest index, the probability of a policy continuing to choose the same set of individuals converges to 1, whereas the probability of every choosing another individual j converges to 0.</p><p>Proof of Theorem 5. By the weak homogeneity condition (Assumption 3(c)) and the survival condition (Assumption 1), we have f -&gt; N -M M g + . Then, we apply Lemma 1 by setting</p><formula xml:id="formula_61">Y t = U i (t + 1) -U i (t) and µ t = M N f i (U i (t)) -(1 -M N )g i (U i (t)</formula><p>). We note that µ t actually evaluates in expectation the rate of welfare increase under the random policy, where</p><formula xml:id="formula_62">E[a i (t) | F t ] = M N for any t ≥ 0, i ∈ [N ] and F t . Thus, we obtain that E[U i (t + 1) -U i (t) | F t ] ≥ M N f - i -(1 -M N )g + i &gt;</formula><p>0 under the random policy. From this we conclude that lim t→∞ min i U i (t) = ∞, and thus every individual's welfare will increase unboundedly over time. Since lim</p><formula xml:id="formula_63">T →∞ U i (T ) → +∞, we have lim T →∞ µ T = M N f + -1 -M N g -and since µ T is bounded, we apply Lemma 1 with Y t = U i (t + 1) -U i (t), λ = µ = M N f --(1 -M N )g + . Finally we conclude R i = lim t→∞ U i (t) -U i (0) t = M N f --1 - M N g + &gt; 0 , a.s.<label>(27)</label></formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1 LUNDBERG'S INEQUALITY FOR SUBMARTINGALES</head><p>In this subsection, we present technical details used in the proof of Theorem 4.</p><p>In <ref type="bibr" target="#b39">Moriconi (1986)</ref> (page 179), the author briefly mentioned the Lundberg's inequality also holds for submartingales. We provide the proof below for completeness. First, we define the adjustment coefficient for submartingales:</p><p>Definition 2. Let {X t } be a submartingale, the adjustment coefficient, denoted by r * , is the positive value such that {exp(-r * X t )} is a martingale, i.e., E[exp(-r * Z t+1 )] = 1 where Z t+1 := X t+1 -X t .</p><p>Lemma 2. (Lundberg's inequality for submartingales) Let {X t } be a submartingale with X 0 = u &gt; 0, r * be the adjustment coefficient of {X t } and assume {Z t } are i.i.d. . The probability of ultimate ruin is bounded as follows</p><formula xml:id="formula_64">ψ(u) ≤ exp(-r * u)</formula><p>where ψ(u)</p><formula xml:id="formula_65">:= P(T (u) &lt; ∞), T (u) := min{t ≥ 1 : X t ≤ 0, X 0 = u}.</formula><p>Proof. The proof is similar to the one for analyzing the surplus of an insurance portfolio (refer to Theorem 5.2 in Tse ( <ref type="formula">2023</ref>)). We prove the result by induction on t, for ψ(t; u) := P(T (u) ≤ t) and denoting</p><formula xml:id="formula_66">ψ(1; u) = -u -∞ P(Z 2 = x)dx ≤ -u -∞ exp(r * (-u -Z 2 ))P(Z 2 = x)dx = exp(-r * u) • -u -∞ exp(-r * Z 2 )P(Z 2 = x)dx<label>(a)</label></formula><p>= exp(-r * u).</p><p>Assume Lundberg inequality holds for any time step less than t and u &gt; 0 and now consider ψ(t + 1, u),</p><formula xml:id="formula_67">ψ(t + 1; u) = ψ(1, u) + ∞ 0 ψ(t, x)P(Z 2 = x -u)dx (b) ≤ -u -∞ P(Z 2 = x)dx + ∞ 0 exp(-r * x)P(Z 2 = x -u)dx ≤ -u -∞ exp(-r * (x + u))P(Z 2 = x)dx + ∞ -u exp(-r * (x + u))P(Z 2 = x)dx = exp(-r * u)E[exp(-r * Z 2 )] (c) = exp(-r * u).</formula><p>where inequality (b) holds by Lundberg's inequality for time step t.</p><p>Remark 1. Note in the proof of Lemma 2, using condition E[exp(-r * Z 2 )] ≤ 1 in equality (a),(c) is enough, which is a weaker condition than Z 2 is adjustable.</p><p>The following corollary is an immediate result of the above lemma. Corollary 3. Let {X t } be a submartingale with E[X t+1 | X t ] = X t + c where c &gt; 0. Denote Z t+1 := X t+1 -X t and {Z t } are i.i.d. Assume there ∃z * &gt; 0 s.t. P(Z t+1 ≥ z * ) &gt; 0 and P(Z t+1 ≤ -z * ) &gt; 0 . There exists a positive constant r * such that</p><formula xml:id="formula_68">ψ(u) ≤ exp(-r * u) .</formula><p>Proof. The proof is immediate by noticing</p><formula xml:id="formula_69">E[exp(-rX t+1 ) | F t ] = exp(-rX t ) • E[exp(-r(X t+1 -X t )) | F t ] . Denote ϕ(r) := E[exp(-r * (X t+1 -X t )) | F t ],</formula><p>which is continuously differentiable, and we obtain ϕ(0) = 1, ϕ ′ (0) = -c by computing the closed-form derivative. Since P(Z t+1 ≥ z * ) &gt; 0, P(Z t+1 ≤ -z * ) &gt; 0, and hence we have lim r→+∞ ϕ(r) = +∞. Hence there exists r * &gt; 0 such that ϕ(r * ) = 1. Moreover, since Z t are i.i.d. and {X t } is adjustable (i.e., there exists an adjustment coefficient as defined in Definition 2 that does not depend on {X t }), we can apply Lemma 2 and we conclude the proof.</p><p>The following lemma is an adapted version of Lemma 2 and will become useful in the proof of the main result. Lemma 3. (Lundberg's inequality for a welfare process) Consider a random process {X i (t)} defined as X i (t) = U i (t)|a i (t) = 1, with U i (0) = u and {U i (t)} defined as the welfare process in model 1, for i = 1, . . . , N . As such, {X i (t)} defines a welfare process under an intervention, i.e. a i (t) ≡ 1. Assume there exists z * &gt; 0, 0 &lt; l &lt; 1 s.t. P(Z i (t + 1) ≥ z * | F t ) ≥ l, P(Z i (t + 1) ≤ -z * ) ≥ l for any F t and any i. Then, for an individual i, there exists a positive constant r * , such that the probability of ultimate ruin is bounded as follows</p><formula xml:id="formula_70">ψ(u) ≤ exp(-r * u)<label>(28)</label></formula><p>where, by an abuse of notation, ψ(u)</p><formula xml:id="formula_71">:= P(T (u) &lt; ∞), T (u) := min{t ≥ 1 : X i (t) ≤ 0, X i (0) = u}.</formula><p>Proof. For an individual i and a timestep t, denote ϕ(r)</p><formula xml:id="formula_72">:= E[exp(-r(X i (t + 1) -X i (t))) | F t ],</formula><p>for any r. We observe</p><formula xml:id="formula_73">ϕ(r) = b k=-b P(Z i (t + 1) = k) exp(-rk), ϕ ′ (r) = b k=-b -kP(Z i (t + 1) = k) exp(-rk), ϕ ′′ (r) = b k=-b k 2 P(Z i (t + 1) = k) exp(-rk). Notice that ϕ(0) = 1, ϕ ′ (0) = -E[Z i (t + 1) | F t ] ≤ -g -, and 0 &lt; ϕ ′′ (r) ≤ 2bk 2 exp(rb)</formula><p>for any F t . First of all, we know that there exists a small interval for r near zero, (0, a] for some r(F t ) &gt; 0, such that ϕ(x) ≤ 1 for x ∈ (0, r(F t )] by applying Rolle's theorem. Next, we claim there exists r * &gt; 0 s.t. ϕ(r * ) ≤ 1, that is independent of any F t . This claim can be easily proved by contradiction: assume for any ϵ &gt; 0, there exists r ϵ ≤ ϵ, F t (ϵ) such that ϕ(r ϵ ) &gt; 1 . Note that under F t (ϵ) and since ϕ(0) = 1, there must be an x ∈ (0, r ϵ ] such that ϕ ′ (r ϵ ) &gt; 0. Making ϵ arbitrarily small, we get that r ϵ → 0 and since ϕ(0) = 1 and ϕ ′ (0) &lt; 0, there must exist x ∈ (0, r ϵ ] such that ϕ ′′ (x) → +∞. This contradicts with the fact that ϕ ′′ (r) ≤ 2bk 2 exp(rb) for any F t . Hence for our welfare process Z i (t), which is not i.i.d. for different t, and not adjustable, but it satisfies</p><formula xml:id="formula_74">E[exp(-r * Z i (t))] ≤ 1 for some positive constant r * that is independent of F t and all i ∈ [N ].</formula><p>Finally, we conclude the proof by pointing out that the proof of Lemma 2 still applies under condition</p><formula xml:id="formula_75">E[exp(-r * Z i (t))] ≤ 1 (see Remark 1).</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B POLICY COMPARISON UNDER A RUIN CONDITION</head><p>Our survival condition, Assumption 1, defined a parameter condition in which there exists a policy that can 'lift' every individual unboundedly, as time grows. We show that different versions of the Rawlsian policy achieve this property (in addition, the constant proportions policy from <ref type="bibr" target="#b42">Radner &amp; Rothschild (1975)</ref> will also achieve this property). Under the survival condition, our main result shows that the Rawlsian policy will achieve better long-term social welfare.</p><p>In this section, we introduce a complementary condition to the survival condition, called a ruin condition. Intuitively, under this condition, even a Rawlsian policy will not be able to ensure that every individual will have positive welfare, asymptotically. As such, the lowest welfare will decay indefinitely almost surely.</p><p>Note: we borrow the 'ruin' terminology from ruin theory, but the definition of a 'ruin condition' is specific to our setting, as defined below. Our proofs make use of ruin theory in applying Lundberg's inequality, as seen in Appendix A. Assumption 4 (Ruin condition). We assume</p><formula xml:id="formula_76">ζ((f + 1 , . . . , f + N ), (g - 1 , . . . , g - N )) &lt; 0 where ζ : R 2N → R is defined in equation 3. and f + i := sup f i (x) &gt; 0 , f - i := inf f i (x) &gt; 0 , g + i := sup g i (x) &gt; 0 , g - i := inf g i (x) &gt; 0 . Theorem 6 (Theorem 2, formal).</formula><p>If the ruin condition is met, under regularity, modeling conditions, and as long as f i (•) + g i (•) is increasing for all i ∈ [N ], the result in Theorem 1 is reversed:</p><p>Rutilitarian ≥ RRawlsian a.s.</p><p>where the Rawlsian and utilitarian policies are defined in the same informational contexts, i.e.</p><p>(min-U, max-U), (max-g, max-f), (max-g, max-fg).</p><p>Proof of Theorem 6. We prove this result similarly as in Theorem 1, by computing in closed-form the individual rates of growth under every policies, and then computing the long-term social welfare as an average of these rates. First, we note that we can compute the individual rates of growth under utilitarian policies just like in Theorem 4 by noting that the proof does not make use of the survival condition (the survival condition is only necessary to compute the individual rates of growth under Rawlsian policies). Next, we compute the individual rates of growth for Rawlsian policies under the ruin condition in Theorem 7 (Corollary 4). We then use uniform boundedness to compute the long-term social welfare for Rawlsian and utilitarian policies, noting that a utilitarian policy is better than a Rawlsian policy as long as f + ≥ f -, which is true by the "rich-get-richer" modeling condition.</p><p>We present a visualization of Theorem 6 in Figure <ref type="figure" target="#fig_1">2</ref> where we can observe the utilitarian policies (max-U, max-f, max-fg) converge to a higher growth rate while Rawlsian policies (min-U, max-g) converges to a suboptimal average growth rate. The experiment setting here is as same as Section 5.1. Under uniform boundedness, the parameters for the shape of (f i (•)) i , (g i (t)) i are randomly sampled within the same interval, which is weaker than the assumption in Theorem 6. </p><formula xml:id="formula_77">Rmin-U = Rmax-g = M N f -- N -M N g + &lt; 0 a.s.</formula><p>Proof of Theorem 7. Under the ruin condition, consider the upper bound in inequality 10 and we obtain</p><formula xml:id="formula_78">E[ Ũ (t + 1) -Ũ (t) | F t ] ≤ ζ((f + 1 , . . . , f + N ), (g - 1 , . . . , g - N )) &lt; 0. Applying Lemma 1 with Y t = Ũ (t + 1) -Ũ (t), µ = ζ((f + 1 , . . . , f + N ), (g - 1 , . . . , g - N )</formula><p>), we obtain Ũ (t + 1) → -∞ a.s. and hence min i∈[N ] U i (t) → -∞. Here we use the same intuition as <ref type="bibr">Rothschild (1975a)</ref>, proving there exists T * such that</p><formula xml:id="formula_79">lim t→∞ max i U i (T * ) -min j U j (T * ) t = 0 . (<label>29</label></formula><formula xml:id="formula_80">)</formula><p>We prove equation 29 by applying Proposition 1 and Lemma 1 in <ref type="bibr">Rothschild (1975a)</ref>. Now with equation 29, we know everyone has the same growth rate and hence U i (t) → -∞ a.s. for all i ∈ [N ]. Then by the uniform boundedness from our modeling condition and the monotonicity of</p><formula xml:id="formula_81">(f i (•)) i , (g i (•)) i , we have lim t→∞ E N i=1 (U i (t + 1) -U i (t)) N t = M N f -- N -M N g + Apply Lemma 1 with Y t = N i=1 (Ui(t+1)-Ui(t)) N , λ = µ = M N f --N -M N g + , we conclude R i = M N f -- N -M N g + , i = 1, • • • , N.</formula><p>Then since every individual has the same growth rate, we conclude our proof and our corollary follows immediately. We note that the same result easily follows for the max-g policy, given the tie-breaking rule that favors the individual with the lowest welfare.</p><p>Remark 2. To show convergence of the individual rates of growth under the ruin condition, uniform boundedness is needed to obtain the same growth rate for every individual. In contrast, Theorem 3 does not require uniform boundedness for obtaining the same individual growth rate, asymptotically.</p><p>The following proposition is a counterpart for Proposition 2 in <ref type="bibr">Rothschild (1975a)</ref> under the ruin conditions. In the proof below, we emphasize the differences while keeping the other steps concise. Proposition 1. Under the conditions of Theorem 7, let D(t)</p><formula xml:id="formula_82">:= max i∈[N ] U i (t) -min j∈[N ] U j (t),</formula><p>there exists a constant G such that if D(s) ≥ G and T * is the first integer such that D(s + T * ) &lt; G, then there exist H and K such that P(T * &gt; n) ≤ He -nK .</p><p>Proof of Proposition 1. Suppose K is any proper subset of [N ], and K ′ is the complement of K in <ref type="bibr">[N ]</ref>. We take the case where the min-U policy only considers individuals in K while ignoring individuals in K ′ . We prove the following inequality by induction: there exists a constant T K such that</p><formula xml:id="formula_83">E[max j∈K ′ U j (t) -min i∈K U i (t) | F 0 ] ≤ max j∈K ′ U j (0) -min i∈K U i (0) -2, ∀t ≥ T K .<label>(30)</label></formula><p>The inequality in equation 30 allows us to satisfy the conditions in Proposition 2 from <ref type="bibr">Rothschild (1975a)</ref> and easily adapt the proof of Theorem 7. The base case N = 2 is trivial since we know everything about the behavior of an individual i with a i (t) = 0 for all t ≥ 0. Now assume that for N = N 0 , Proposition 1 holds, and consider N = N 0 + 1. Consider the set K, since |K| ≤ N 0 and by induction, we have . As for the set K ′ , apply the monotonicity of (g i (•)) i∈K ′ and the uniform boundedness condition, obtaining</p><formula xml:id="formula_84">lim t→∞ U i (t) t = ζ((f - i ) i∈K , (g + i ) i∈K ), ∀i ∈ K, a.</formula><formula xml:id="formula_85">lim t→∞ U i (t + 1) t = -g + , ∀i ∈ K ′ , a.s.</formula><p>Hence we know that</p><formula xml:id="formula_86">lim t→∞ max j∈K ′ U j (t) -min i∈K U i (t) t = -g + -ζ((f - i ) i∈K , (g + i ) i∈K ) &lt; 0, a.s.</formula><p>By applying the Fatou-Lebesque theorem, we have</p><formula xml:id="formula_87">lim t→∞ E max j∈K ′ U j (t) -min i∈K U i (t) t | F 0 = -g + -ζ((f - i ) i∈K , (g + i ) i∈K ) &lt; 0,</formula><p>Then there exists T K &gt; 0 such that for all t &gt; T K and</p><formula xml:id="formula_88">E max j∈K ′ U j (t) -min i∈K U i (t) | F 0 ≤ max j∈K ′ U j (0) -min i∈K U i (0) -2.</formula><p>At this point, we may apply Lemma 4 and Lemma 5 from <ref type="bibr">Rothschild (1975a)</ref> and conclude our proof.</p><p>Remark 3. The intuition for Proposition 1 is the following: when the ruin condition holds, individuals receiving an allocation will still decay in welfare, due to the strong decay functions effects that the ruin condition models. However, this happens at a slower rate compared to individuals whose welfare decays absent any intervention. As such, the welfare gap between the individuals with the maximum welfare level and those with minimum welfare will be bounded, asymptotically, and therefore everyone will decay, yet at a slower rate given the intervention of the social planner than without any intervention.</p><p>Remark 4. The survival and ruin conditions characterize two model states in which we can make a definite comparison between Rawlsian policies and utilitarian policies in terms of the long-term social welfare they achieve. There is a middle ground, in which neither survival nor ruin may hold, in which the direct comparison between policies becomes much more difficult. We leave this direction for future studies.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C EXPERIMENTAL DETAILS</head><p>This section contains detailed simulation notes for Section 5 and Appendix figures. For the simulations in which the return and decay function bounds are uniform, we choose threshold parameters</p><formula xml:id="formula_89">F - i , F + i , G - i , G + i s.t. f i (x) = f -, g i (x) = g + for x ≤ F - i , x ≤ G - i , respectively, and f i (x) = f + , g i (x) = g -for x ≥ F + i , x ≥ G + i</formula><p>, respectively, and we linearly interpolate between these thresholds. Choosing F - i &lt; F + i and G - i &gt; G + i ensures that f i is increasing and g i is decreasing on the non-constant segments. We generate F - i , F + i , G - i , G + i randomly in the interval (0, ∆] for some ∆ &gt; 0. For Figures <ref type="figure">1,</ref><ref type="figure" target="#fig_1">2</ref>, and 4, we filter to ensure that f i (•) + g i (•) is increasing. For Figure <ref type="figure">3</ref>, we filter to ensure that f i (•) + g i (•) is increasing under some threshold τ , and decreasing above threshold τ . For all figures, we average over 50 iterations and report the social welfare obtained at every timestep. Our results are qualitatively the same for other functional forms of f i , g i , such as sigmoid functions.</p><p>All code and data used in our simulations is available in this repository.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D BEYOND A MATTHEW EFFECT: MODELING VARIATIONS OF THE TREATMENT EFFECT FUNCTION</head><p>In the main text, we modeled a Matthew effect through the "rich-get-richer" and "poor-get-poorer" behaviors induced by an increasing intervention return function f i (•) and a decreasing decay function g i (•), under the assumption that the treatment effect f i (•) + g i (•) is also increasing. This assumption suggests that interventions at higher level of welfare have a higher impact. We explore a variation of this assumption in this section, assuming that there exists a threshold τ above which the treatment effect is in fact decreasing. In doing so, we capture a diminishing return effect, where individuals with the highest or lowest levels of welfare benefit less from an intervention than individuals with moderate levels of welfare. This is motivated by recent policies that target people with moderate welfare values: the algorithmic profiling policy introduced by Austria in 2020 <ref type="bibr" target="#b3">(Allhutter et al., 2020)</ref> predicts a probability of an individual to re-enter the job market based on an intervention (in a sense, a prediction of the treatment effect). The policy allocates an intervention to those "in-the-middle", suggesting that moderate welfare values are predictive of the highest treatment effect. In addition, optimal taxation policy and redistributive taxation <ref type="bibr" target="#b36">(Mankiw et al., 2009;</ref><ref type="bibr" target="#b11">Benabou, 2000)</ref> often argue for an increasing tax scale or a decreasing benefit scheme as a function of income. We provide a theoretical extension from our results in Theorem 1 under stricter homogeneity assumptions, capturing a diminishing return on interventions. Corollary 5 (Diminishing returns). Assume the conditions of Theorem 1, but with a threshold τ &gt; 0 s.t. f i (x), f i (x) + g i (x) are decreasing for x ≥ τ . Furthermore, assume that the functions f i , g i are uniform for all individuals (f i</p><formula xml:id="formula_90">(x) = f j (x), g i (x) = g j (x) for ∀i ̸ = j ∈ [N ]). Finally, lim x→-∞ (f i (x) + g i (x)) &lt; lim x→+∞ (f i (x) + g i (x)).</formula><p>Then with positive probability, a Rawlsian policy achieves a higher long-term social welfare than a utilitarian policy: P( RRawlsian ≥ Rutilitarian ) &gt; 0, where the Rawlsian and utilitarian policies are defined in the same informational contexts, i.e. {min-U, max-U}, {max-g, max-f}, {max-g, max-fg}. Note here that all policies break the tie by choosing the individual with the lowest welfare level. Remark 5. Corollary 5 shows that our analysis under the simple assumptions on the monotonicies of intervention return function and the decay function can be applied to more complicated cases. When f i (•) + g i (•) is increasing, the choices of max-fg (max-f) policy and min-U policy diverge. The tendency of max-fg (max-f) policy of focusing on the better-off population can cause long-term loss by accumulating the decay of the ignored population. Furthermore, the ignored population enters a low-welfare trap, since they will likely not be targeted again. See Figure <ref type="figure">3</ref> for an illustration of Corollary 5 where we can observe utilitarian policies (max-U, max-f, max-fg) show a lower growth rate over the finite time horizon as compared to the Rawlsian policies (min-U, max-g).</p><p>Proof. First of all, since the asymptotic behavior of individuals under the min-U policy (i.e. being lifted unboundedly) does not depend on the simple monotonicity property of the return functions, we have U i (t) → +∞ for ∀i ∈ [N ] under a Rawlsian policy with survival, regularity conditions and existence of lim x→-∞ (f i (x) + g i (x)) from Theorem 3. Hence we conclude RRawlsian = M N f + -N -M N g -. However, before the turning point of the monotonicity of f i (•) + g i (•), the maxfg policy tends to focus on the better-off individuals by applying the rule of max-fg policy. Hence with positive probability, some individuals will be left behind (with f i (U i (t)) + g i (U i (t)) less than lim x→+∞ (f i (x) + g i (x))); then if these individuals will not receive budget for all t afterwards, the probability of them never crossing the turning point (i.e., where the mononicity of the treatment effect function changes) is lowerbounded by a positive constant independent of F t by applying Lemma 3.</p><p>And after the turning point, the max-fg policy coincides with the min-U policy and lifts every individual to infinity, asymptotically, with positive probability (not almost surely anymore since the individuals can drop below the turning point of f i (•) + g i (•)). Hence we conclude that with positive probability, Rmax-fg</p><formula xml:id="formula_91">∈ M f + -(k-1)g --(N -M -k)g + N , k = 1, . . . , N -M. . With positive probabil- ity, we have Rmax-fg ≤ Rmin-U .</formula><p>A similar argument applies to the max-f policy by substituting f i (•) + g i (•) with f i (•) and hence omitted here. For the max-U policy, Theorem 4 still applies and we have Rmax-fg ≤ Rmin-U with positive probability. Figure <ref type="figure">3</ref>: We show social welfare as the finite-time growth rate averaged over all individuals, for all policies (solid lines), as well as theoretical growth rate for min-U and max-U policies (dashed lines) under diminishing returns.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E DIFFERENT TIE-BREAKING RULE FOR THE MAX-G POLICY</head><p>In Section 2 we introduced a rule that breaks the tie in favor of individuals with the smallest index, when they have the same welfare values. Additionally, when the decay function values are the same, the max-g policy chooses the individual with the lowest welfare. We explore a variation where the max-g policy breaks the tie by also choosing the individual with the lowest welfare in Figure <ref type="figure" target="#fig_4">4</ref>, noting a slightly convergence rate than the min-U policy. All simulations details are the same as in Section 5. .</p><p>Theorem 8. Under regularity (Assumption 3) and modeling conditions (Assumption 2), and assume that f i (x) ≡ f (x), g i (x) ≡ g(x), the proportional max-U policy leads to the following closed form solution of the individual rates of growth:</p><formula xml:id="formula_92">R i = f + , i = J, -g + , i ̸ = J, a.s.</formula><p>where J is a random variable with values in [N ] whose exact value depends on U (0), f (•), and g(•).</p><p>Proof of Theorem 8. For ∀i, j ∈ [N ] s.t. U i (t) ≥ U j (t), we have a i (t) ≥ a j (t), then under the assumption that f i (x) ≡ f (x), g i (x) ≡ g(x), we further obtain</p><formula xml:id="formula_93">E[Z i (t + 1)] = a i (t) • f (U i (t)) -(1 -a i (t)) • g(U i (t)) ≥ a j (t) • f (U i (t)) -(1 -a j (t)) • g(U i (t)) ≥ a j (t) • f (U j (t)) -(1 -a j (t)) • g(U j (t)) = E[Z j (t + 1)].</formula><p>where the last inequality holds because of modeling conditions (Assumption 2.(a), (b)). Consider i ∈ M t where M t = arg max j {U j (t)} and i ∈ M t , j ∈ [N ] such that U i (t) -U j (t) ≥ 1, we have</p><formula xml:id="formula_94">E[U i (t + 1) -U j (t + 1) | F t ] -(U i (t) -U j (t)) = E[Z i (t + 1) -Z j (t + 1) | F t ] = a i (t) • f (U i (t)) -(1 -a i (t)) • g(U i (t)) -(a j (t) • f (U j (t)) -(1 -a j (t)) • g(U j (t))) ≥ a i (t) • f (U i (t)) -(1 -a i (t)) • g(U j (t)) -(a j (t) • f (U i (t)) -(1 -a j (t)) • g(U j (t)))</formula><p>= (a i (t) -a j (t)) • f (U i (t)) + (a i (t) -a j (t)) • g(U j (t))</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>≥</head><p>e M (t) -e M (t)-1 j∈[N ] e Uj (t) • f -+ e M (t) -e M (t)-1 j∈[N ] e Uj (t) • g - ≥ 1 -e -1 N (f -+ g + ) &gt; 0 .</p><p>Now treat U i (t) -U j (t) as the welfare process and apply adapted Lundberg's inequality (Lemma 3), we claim that with positive probability that U i (t) -U j (t) ≥ 1 for ∀t ≥ 0 when U i (0) -U j (0) ≥ 1 where i ∈ M 0 . Then combine with the regularity condition (Assumption 3(c)), we have that with positive probability (lowerbounded by a constant) that U i (t) -U j (t) ≥ 1 for ∀t &gt; 0 where i ∈ M 0 . Then we apply the same reasoning for j ∈ [N ]\i and conclude that with probability 1, the proportional max-U policy will fixate on one single individual asymptotically.</p><p>Theorem 9. Under regularity (Assumption 3) and modeling conditions (Assumption 2.(a),(b)), the survival condition (Assumption 1), the proportional min-U policy leads to the following closed form solution of the individual rates of growth: R i = ζ((f + 1 , . . . , f + N ), (g - 1 , . . . , g - N )), i = 1, . . . , N, a.s.</p><p>Proof of Theorem 9. The result can be proved by induction, and the proof of Theorem 3 applies here with minor modifications. We assume for N -1 individuals the conclusion holds, and consider M := arg max j {U j (0)} and M c := [N ]\M . For ∀l ∈ M, a l (t) ≤ e -D(t) 1 + (N -1)e -D(t) ⇒ i∈M c a i (t) ≥ 1 1 + (N -1)e -D(t) , where D(t) = max j∈[N ] U j (t) -min i∈[N ] U i (t). Hence there exists constant C such that when D(t) ≥ C, the survival condition for M c is satisfied and we have ŪM c (t + 1) -ŪM c (t) =</p><formula xml:id="formula_95">i∈M c w M c i a i (t) • f i (U i (t)) -(1 -a i (t)) • g i (U i (t)) ≥ i∈M c w M c i a i (t) • f - i -(1 -a i (t)) • g + i =   i∈M c a i (t) - j∈M c g + j f - j + g + j   • k∈M c 1 f - k + g + k -1 ≥   1 1 + (N -1)e -C - j∈M c g + j f - j + g + j   • k∈M c 1 f - k + g + k -1 &gt; 0</formula><p>where ŪM c (t), w M c i are defined as in equation 5 for set M c . Hence we apply the conclusion for M c and claim that there exists constant T M c such that when i∈M a i (t) ≤ 1 1+(N -1)e -C for ∀t ≥ 0, we have</p><formula xml:id="formula_96">E min j∈M c U j (t) ≥ min j∈M c +1, ∀t ≥ T M c , E max j∈M c U j (t) ≤ max j∈M c -1, ∀t ≥ T M c . As for i ∈ M, E[Z i (t + 1) | a i (t), F t ] ≤ a i (t)f + i -(1 -a i (t))g - i ≤ 1 N -1 + e -D(t) f + i - N -2 + e -D(t) N -1 + e -D(t) g - i ,</formula><p>and when D(t) ≥ C ′ for constant C ′ &gt; 0, we have 1 N -1 + e -D(t) f + i -N -2 + e -D(t) N -1 + e -D(t) g - i &lt; - The rest of the proof goes through with minor modifications given the above facts.  </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head></head><label></label><figDesc>) by applying equation 1 and noting the all functions g i (•) are positive by definition. In addition, again we know |Y i (t)| &lt; ∞ by uniform boundedness of |Z i (t)| in regularity conditions(Assumption 3(b)), and noting that Y i (0) = U i (0) &lt; ∞ by definition of the initial conditions.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure2: We show social welfare as the finite-time growth rate averaged over all individuals, for all policies (solid lines), as well as theoretical expected growth rate (dashed lines) under the ruin condition.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head></head><label></label><figDesc>s.where ζK ((x i ) i∈K , (y j ) j∈K ) := M -</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 4 :</head><label>4</label><figDesc>Figure4: Social welfare as the finite-time growth rate averaged over all individuals, for all policies (solid lines), as well as theoretical expected growth rate, asymptotically (dashed lines). The tiebreaking rule favors the individual with the lowest index for all policies.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head></head><label></label><figDesc>whole population [N ], if i∈Mt a i (t) T such that E min j∈M c U j (t) ≥ min j∈M c U j (0) + 1, ∀t ≥ T, E max j∈M U j (t) ≤ max j∈M U j (0) -1, ∀t ≥ T.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 6 :</head><label>6</label><figDesc>Figure6: Social welfare as the finite-time growth rate average over all individuals, for all policies (solid lines) under one set of heterogeneous bounds.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: Percentage of iterations where min-U obtains better social welfare than max-U as the bounds {f - i , f + i , g - i , g + i } i=1:N vary according to parameters b and σ 2 , at time step t = 6000 (a) and t = 10 (b).</figDesc><graphic coords="29,139.88,463.41,138.14,128.74" type="bitmap" /></figure>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head n="7">ACKNOWLEDGMENTS</head><p>We thank <rs type="person">Florian E. Dorner</rs>, <rs type="person">Jessie Finocchiaro</rs>, <rs type="person">Max Kasy</rs>, <rs type="person">Jon Kleinberg</rs>, <rs type="person">Ali Shirali</rs>, <rs type="person">Serena Wang</rs>, and anonymous reviewers for their generous feedback and detailed discussions. <rs type="person">Rediet Abebe</rs> was partially supported by the <rs type="funder">Andrew Carnegie Fellowship Program</rs>. <rs type="person">Jiduan Wu</rs> would like to thank the financial support from <rs type="funder">Max Planck ETH Center for Learning Systems (CLS)</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+			</listOrg>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>G MODELING CHOICE ON MONOTONICITY</head><p>Use the assumption on the Matthew effect, we model (f i (•)) i as increasing and (g i (•)) i as decreasing. For other combinations of monotonicities (see Table <ref type="table">1</ref>), one could develop theoretical foundation using similar tools. We provide finite-horizon simulations for different combinations of monotonicities (as in Table <ref type="table">1</ref>) in Figure <ref type="figure">5</ref>.</p><p>Decreasing Increasing Constant Decreasing Mixed (Rawlsian) Rawlsian Mixed (Rawlsian) Increasing Mixed (utilitarian) Utilitarian Utilitarian Constant Tie Tie Tie</p><p>Table <ref type="table">1</ref>: Here "increasing" denotes non-constant increasing functions and "decreasing" denotes nonconstant decreasing functions. Each cell represent the comparison between the utilitarian policies and the Rawlsian policies under the monotonicicy combination of f i (•), g i (•) being "column-row" using the measure of long-term social welfare. We use "Mixed (utilitarian)" to represent regions where only utilitarian policies achieve the better long-term social welfare, "Mixed (Rawlsian)" to represent regions where all of Rawlsian policies and only part of utilitarian policies achieve the better long-term social welfare, "Utilitarian" to represent the region (discussed in this paper) where all of utilitarian policies show superiority over all of Rawlsian policies, "Rawlsian" to represent the region (discussed in this paper) where all of Rawlsian policies show better welfare than all utilitarian policies, "Tie" to represent regions where utilitarian policies and Rawlsian policies perform equally well. The max-g policy breaks the tie by choosing the individual with lowest welfare and the other policies break the tie by choosing the individual with the smallest index. Our discussion in Section 3 is constrained to cell on the first row, second column because of our assumption about "rich-getricher" and "poor-get-poor". All the simulations are conducted under the survival condition and the uniform boundedness assumption.</p><p>From Figure <ref type="figure">5</ref>, we observe the trend shifts as the monotonicity of decay functions g i (•) change. As the monotonicity of decay functions describe where the instability of the society is located: decreasing g i (•) stands for individuals are more fragile as their welfare level are lower while increasing g i (•) implies more fragility of individuals with higher welfare level. Hence Rawlsian policies, which aim to leave no one behind, would perform better under cases where g i (•) are decreasing. As when g i (•) are constant (no inequality in decay functions), both types of policies will perform well show no difference in long-term welfare.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>H POLICY COMPARISON FOR HETEROGENEOUS POPULATIONS</head><p>In this section, we discuss the comparisons among policies when the uniform boundedness assumption is violated and provide evidence that a Rawlsian policy still prevails over a utilitarian policy when the heterogeneity of the population is bounded below some threshold.</p><p>When the uniform boundedness condition may not hold, a direct comparison between Rawlsian and utilitarian policies becomes more intricate. We explore this case by simulating the long-term social welfare values when the limits of the intervention return and decay functions f i , g i are different. We use the same dataset and pre-processing procedure as Section 5.1 except we generate heterogeneous bounds {f - i , f + i , g - i , g + i } and conduct comparison using finite-horizon simulation. We draw the bounds g - i , g + i , f - i , f + i from normal distributions in the following way:</p><p>• The variance of the normal distribution is modeled by a parameter σ 2 that controls the heterogeneity of the bounds: larger σ means more heterogeneous bounds.</p><p>• The mean of the normal distribution is chosen differently for f i and g i : first of all, we choose means for the f i and g i functions that makes survival condition possible. Second, we introduce a parameter b that models the strength of the decay functions: larger b means that g - i and g + i are closer, and therefore, the decay effect is bounded. A smaller b means 0 1000 2000 3000 4000 5000 6000 that the (relative) decay effect can get quite large for individuals with lower welfare, i.e., we expect a stronger "poor-get-poorer" effect.</p><p>Based on this set-up, we simulate the following model: w.l.o.g., we set M = 1, for each in-</p><p>For each pair of (b, σ 2 ) parameters, we generate 50 sets of heterogeneous bounds ({g</p><p>we average the social welfare obtained over all individuals, averaging over 50 iterations of the generation process of the intervention and decay function bounds. We present the finite-time social welfare of individuals under different policies using one set of randomly generated bounds {f - i , f + i , g - i , g + i } in Figure <ref type="figure">6</ref>. Figure <ref type="figure">7</ref> illustrates a heatmap of the percentage of times when the min-U Rawlsian policy has better long-term welfare than the max-U utilitarian policy, for each value of b and σ (1 meaning that the min-U Rawlsian policy is better in all iterations). From Figure <ref type="figure">7</ref>, we observe the min-U Rawlsian policy maintains the tendency to perform worse the max-U policy in a short-term while surpasses the max-U utilitarian policy in the long-term for a range of σ values (in a sense, for bounded heterogeneity). As b decreases (and therefore the decay functions g i have a stronger effect), a Rawlsian policy starts performing better by preventing stronger loss caused by the decay of low-welfare individuals.</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Subsidy allocations in the presence of income shocks</title>
+		<author>
+			<persName><forename type="first">Rediet</forename><surname>Abebe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jon</forename><surname>Kleinberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Weinberg</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="page" from="7032" to="7039" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Wealth dynamics over generations: Analysis and interventions</title>
+		<author>
+			<persName><forename type="first">Krishna</forename><surname>Acharya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ram</forename><surname>Eshwar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sampath</forename><surname>Arunachaleswaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aaron</forename><surname>Kannan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juba</forename><surname>Roth</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ziani</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2023 IEEE Conference on Secure and Trustworthy Machine Learning (SaTML)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="42" to="57" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Well-being and fair distribution: beyond cost-benefit analysis</title>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Adler</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+			<publisher>Oxford University Press</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Algorithmic profiling of job seekers in austria: How austerity politics are made effective</title>
+		<author>
+			<persName><forename type="first">Doris</forename><surname>Allhutter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Florian</forename><surname>Cech</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabian</forename><surname>Fischer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Grill</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Astrid</forename><surname>Mager</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Frontiers in big data</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="page">502780</biblScope>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Some ordinalist-utilitarian notes on Rawls&apos;s theory of justice</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kenneth</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Arrow</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1973">1973</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Pipeline interventions</title>
+		<author>
+			<persName><forename type="first">Ram</forename><surname>Eshwar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sampath</forename><surname>Arunachaleswaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aaron</forename><surname>Kannan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juba</forename><surname>Roth</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ziani</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Mathematics of Operations Research</title>
+		<imprint>
+			<biblScope unit="volume">47</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="3207" to="3238" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Inequality: What can be done?</title>
+		<author>
+			<persName><surname>Anthony B Atkinson</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Public economics in action: the basic income/flat tax proposal</title>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Barnes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Atkinson</forename></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1995">1995</date>
+			<publisher>Clarendon Press</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Designing fair, efficient, and interpretable policies for prioritizing homeless youth for housing resources</title>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Javad Azizi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Phebe</forename><surname>Vayanos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bryan</forename><surname>Wilder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Rice</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Milind</forename><surname>Tambe</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Integration of Constraint Programming, Artificial Intelligence, and Operations Research: 15th International Conference</title>
+		<meeting><address><addrLine>Delft, The Netherlands</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2018-06-26">2018. June 26-29, 2018. 2018</date>
+			<biblScope unit="volume">15</biblScope>
+			<biblScope unit="page" from="35" to="51" />
+		</imprint>
+	</monogr>
+	<note>CPAIOR</note>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">From proof of concept to scalable policies: Challenges and solutions, with an application</title>
+		<author>
+			<persName><forename type="first">Abhijit</forename><surname>Banerjee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rukmini</forename><surname>Banerji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Berry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Esther</forename><surname>Duflo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harini</forename><surname>Kannan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shobhini</forename><surname>Mukerji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Shotland</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Walton</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Economic Perspectives</title>
+		<imprint>
+			<biblScope unit="volume">31</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="73" to="102" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<monogr>
+		<title level="m" type="main">The influence of randomized controlled trials on development economics research and on development policy. The state of Economics, the state of the world</title>
+		<author>
+			<persName><forename type="first">Abhijit</forename><surname>Vinayak Banerjee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Esther</forename><surname>Duflo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Kremer</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="482" to="488" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Unequal societies: Income distribution and the social contract</title>
+		<author>
+			<persName><forename type="first">Roland</forename><surname>Benabou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">American Economic Review</title>
+		<imprint>
+			<biblScope unit="volume">91</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="96" to="129" />
+			<date type="published" when="2000">2000</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Fairness in machine learning: Lessons from political philosophy</title>
+		<author>
+			<persName><forename type="first">Reuben</forename><surname>Binns</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Fairness, Accountability and Transparency</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="149" to="159" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">Joel</forename><surname>Blau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mimi</forename><surname>Abramovitz</surname></persName>
+		</author>
+		<title level="m">The dynamics of social welfare policy</title>
+		<meeting><address><addrLine>USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Oxford University Press</publisher>
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Social justice in europe: an evaluation of european regional policy</title>
+		<author>
+			<persName><forename type="first">Vittorio</forename><surname>Bufacchi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shari</forename><surname>Garmise</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Government and Opposition</title>
+		<imprint>
+			<biblScope unit="volume">30</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="179" to="197" />
+			<date type="published" when="1995">1995</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Survey of income and program participation (SIPP)</title>
+		<ptr target="https://www.census.gov/programs-surveys/sipp/data/datasets/2014-panel/" />
+		<imprint>
+			<date type="published" when="2014">2014. 2023</date>
+			<publisher>U.S. Census Bureau</publisher>
+			<biblScope unit="page" from="2024" to="2029" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">A just approach balancing rawlsian leximax fairness and utilitarianism</title>
+		<author>
+			<persName><forename type="first">Violet</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><forename type="middle">N</forename><surname>Hooker</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI/ACM Conference on AI, Ethics, and Society</title>
+		<meeting>the AAAI/ACM Conference on AI, Ethics, and Society</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="221" to="227" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Christl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Silvia</forename><surname>De</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Poli</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Trapped in inactivity? Social assistance and labour supply in Austria</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="volume">48</biblScope>
+			<biblScope unit="page" from="661" to="696" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">On the mathematical theory of risk</title>
+		<author>
+			<persName><forename type="first">Harald</forename><surname>Cramér</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Centraltryckeriet</title>
+		<imprint>
+			<date type="published" when="1959">1959</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Learning solutions in large economic networks using deep multi-agent reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Curry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Trott</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soham</forename><surname>Phade</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephan</forename><surname>Zheng</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 23rd International Conference on Autonomous Agents and Multiagent Systems</title>
+		<meeting>the 23rd International Conference on Autonomous Agents and Multiagent Systems</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="2760" to="2762" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Minimax group fairness: Algorithms and experiments</title>
+		<author>
+			<persName><forename type="first">Emily</forename><surname>Diana</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wesley</forename><surname>Gill</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Kearns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Krishnaram</forename><surname>Kenthapadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aaron</forename><surname>Roth</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2021 AAAI/ACM Conference on AI, Ethics, and Society</title>
+		<meeting>the 2021 AAAI/ACM Conference on AI, Ethics, and Society</meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="66" to="76" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Continuous time control of markov processes on an arbitrary state space: average return criterion</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Bharat</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Doshi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Stochastic Processes and their Applications</title>
+		<imprint>
+			<date type="published" when="1976">1976</date>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="page" from="55" to="77" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Fairness through awareness</title>
+		<author>
+			<persName><forename type="first">Cynthia</forename><surname>Dwork</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Moritz</forename><surname>Hardt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Toniann</forename><surname>Pitassi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omer</forename><surname>Reingold</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Zemel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 3rd Innovations in Theoretical Computer Science Conference</title>
+		<meeting>the 3rd Innovations in Theoretical Computer Science Conference</meeting>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+			<biblScope unit="page" from="214" to="226" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Another note on the Borel-Cantelli lemma and the strong law, with the Poisson approximation as a by-product</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Freedman</surname></persName>
+		</author>
+		<ptr target="http://www.jstor.org/stable/2959079" />
+	</analytic>
+	<monogr>
+		<title level="j">The Annals of Probability</title>
+		<idno type="ISSN">00911798</idno>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="910" to="925" />
+			<date type="published" when="1973">1973</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Xianping Guo and Ulrich Rieder. Average optimality for continuous-time markov decision processes in polish spaces</title>
+		<author>
+			<persName><forename type="first">Irwin</forename><surname>Garfinkel</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2006">2015-2018. 2021. 2006</date>
+		</imprint>
+	</monogr>
+	<note>New york city longitudinal survey of well-being</note>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Can the maximin principle serve as a basis for morality? A critique of John Rawls&apos;s theory. American political science review</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>John</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Harsanyi</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1975">1975</date>
+			<biblScope unit="volume">69</biblScope>
+			<biblScope unit="page" from="594" to="606" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Allocating opportunities in a dynamic model of intergenerational mobility</title>
+		<author>
+			<persName><forename type="first">Hoda</forename><surname>Heidari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jon</forename><surname>Kleinberg</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2021 ACM Conference on Fairness, Accountability, and Transparency</title>
+		<meeting>the 2021 ACM Conference on Fairness, Accountability, and Transparency</meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="15" to="25" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<analytic>
+		<title level="a" type="main">A moral framework for understanding fair ml through economic models of equality of opportunity</title>
+		<author>
+			<persName><forename type="first">Hoda</forename><surname>Heidari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michele</forename><surname>Loi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Krishna</forename><forename type="middle">P</forename><surname>Gummadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andreas</forename><surname>Krause</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Conference on Fairness, Accountability, and Transparency</title>
+		<meeting>the Conference on Fairness, Accountability, and Transparency</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="181" to="190" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<analytic>
+		<title level="a" type="main">A short-term intervention for long-term fairness in the labor market</title>
+		<author>
+			<persName><forename type="first">Lily</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiling</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2018 World Wide Web Conference</title>
+		<meeting>the 2018 World Wide Web Conference</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="1389" to="1398" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Policy experimentation: core concepts, political dynamics, governance and impacts</title>
+		<author>
+			<persName><forename type="first">Dave</forename><surname>Huitema</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Jordan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefania</forename><surname>Munaretto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mikael</forename><surname>Hildén</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Policy Sciences</title>
+		<imprint>
+			<biblScope unit="volume">51</biblScope>
+			<biblScope unit="page" from="143" to="159" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Amnesty International</title>
+		<ptr target="https://www.amnesty.org/en/wp-content/uploads/2024/06/EUR1382232024ENGLISH.pdf" />
+	</analytic>
+	<monogr>
+		<title level="m">Barriers in access to social assistance in Austria. Amnesty International Austria</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Fairness versus welfare</title>
+		<author>
+			<persName><forename type="first">Louis</forename><surname>Kaplow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Shavell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Harv. L. Rev</title>
+		<imprint>
+			<biblScope unit="volume">114</biblScope>
+			<biblScope unit="page">961</biblScope>
+			<date type="published" when="2000">2000</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Allocating interventions based on predicted outcomes: A case study on homelessness services</title>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Kube</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sanmay</forename><surname>Das</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Patrick</forename><forename type="middle">J</forename><surname>Fowler</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="622" to="629" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Delayed impact of fair machine learning</title>
+		<author>
+			<persName><forename type="first">Lydia</forename><forename type="middle">T</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarah</forename><surname>Dean</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Esther</forename><surname>Rolf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Max</forename><surname>Simchowitz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Moritz</forename><surname>Hardt</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="3150" to="3158" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Welfare maximization in competitive equilibrium: Reinforcement learning for markov exchange economy</title>
+		<author>
+			<persName><forename type="first">Zhihan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miao</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaoran</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Jordan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuoran</forename><surname>Yang</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="13870" to="13911" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Approximerad framställning af sannolikhetsfunkionen: Återförsäkring af kollektivrisker</title>
+		<author>
+			<persName><forename type="first">Filip</forename><surname>Oskar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ernst</forename><surname>Lundberg</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1903">1903</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Optimal taxation in theory and practice</title>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Gregory Mankiw</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danny</forename><surname>Weinzierl</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Yagan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Economic Perspectives</title>
+		<imprint>
+			<biblScope unit="volume">23</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="147" to="174" />
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b37">
+	<analytic>
+		<title level="a" type="main">The matthew effect in science: The reward and communication systems of science are considered</title>
+		<author>
+			<persName><surname>Robert K Merton</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Science</title>
+		<imprint>
+			<biblScope unit="volume">159</biblScope>
+			<biblScope unit="issue">3810</biblScope>
+			<biblScope unit="page" from="56" to="63" />
+			<date type="published" when="1968">1968</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Rawls&apos;s difference principle and maximin rule of allocation: a new analysis</title>
+		<author>
+			<persName><forename type="first">Philippe</forename><surname>Mongin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marcus</forename><surname>Pivato</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Economic Theory</title>
+		<imprint>
+			<biblScope unit="volume">71</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="1499" to="1525" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Ruin theory under the submartingale assumption</title>
+		<author>
+			<persName><forename type="first">Franco</forename><surname>Moriconi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Insurance and Risk Theory</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="1986">1986</date>
+			<biblScope unit="page" from="177" to="188" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Trying it out: The role of &apos;pilots&apos; in policy making</title>
+		<imprint>
+			<date type="published" when="2003">2003</date>
+		</imprint>
+	</monogr>
+	<note>Cabinet Office</note>
+</biblStruct>
+
+<biblStruct xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Fair enough: Guaranteeing approximate maximin shares</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Ariel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxing</forename><surname>Procaccia</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the fifteenth ACM conference on Economics and computation</title>
+		<meeting>the fifteenth ACM conference on Economics and computation</meeting>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="675" to="692" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b42">
+	<analytic>
+		<title level="a" type="main">On the allocation of effort</title>
+		<author>
+			<persName><forename type="first">Roy</forename><surname>Radner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Rothschild</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/0022-0531(75)90006-X.URLhttps://www.sciencedirect.com/science/article/pii/002205317590006X</idno>
+		<ptr target="https://doi.org/10.1016/0022-0531(75)90006-X.URLhttps://www.sciencedirect.com/science/article/pii/002205317590006X" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Economic Theory</title>
+		<idno type="ISSN">0022-0531</idno>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="358" to="376" />
+			<date type="published" when="1975">1975</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b43">
+	<monogr>
+		<title level="m" type="main">The Matthew effect: How advantage begets further advantage</title>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Rigney</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+			<publisher>Columbia University Press</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Further notes on the allocation of effort</title>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Rothschild</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/B978-0-12-207350-2.50010-5</idno>
+		<ptr target="https://www.sciencedirect.com/science/article/pii/B9780122073502500105" />
+	</analytic>
+	<monogr>
+		<title level="m">Adaptive Economic Models</title>
+		<editor>
+			<persName><forename type="first">Richard</forename><forename type="middle">H</forename><surname>Day</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Theodore</forename><surname>Groves</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Academic Press</publisher>
+			<date type="published" when="1975">1975</date>
+			<biblScope unit="page" from="195" to="220" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Further notes on the allocation of effort</title>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Rothschild</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Adaptive economic models</title>
+		<imprint>
+			<publisher>Elsevier</publisher>
+			<date type="published" when="1975">1975</date>
+			<biblScope unit="page" from="195" to="220" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Welfare inequalities and rawlsian axiomatics</title>
+		<author>
+			<persName><forename type="first">Amartya</forename><surname>Sen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Theory and decision</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="243" to="262" />
+			<date type="published" when="1976">1976</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b47">
+	<analytic>
+		<title level="a" type="main">Personal utilities and public judgements: or what&apos;s wrong with welfare economics</title>
+		<author>
+			<persName><forename type="first">Amartya</forename><surname>Sen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The economic journal</title>
+		<imprint>
+			<biblScope unit="volume">89</biblScope>
+			<biblScope unit="issue">355</biblScope>
+			<biblScope unit="page" from="537" to="558" />
+			<date type="published" when="1979">1979</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b48">
+	<analytic>
+		<title level="a" type="main">Reconciling the rawlsian and the utilitarian approaches to the maximization of social welfare</title>
+		<author>
+			<persName><forename type="first">Oded</forename><surname>Stark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marcin</forename><surname>Jakubek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fryderyk</forename><surname>Falniowski</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Economics Letters</title>
+		<imprint>
+			<biblScope unit="volume">122</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="439" to="444" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b49">
+	<monogr>
+		<title level="m" type="main">The price of inequality: How today&apos;s divided society endangers our future</title>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Stiglitz</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+			<publisher>WW Norton &amp; Company</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b50">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yiu-Kuen</forename><surname>Tse</surname></persName>
+		</author>
+		<title level="m">Nonlife Actuarial Models: Theory, Methods and Evaluation. International Series on Actuarial Science</title>
+		<imprint>
+			<publisher>Cambridge University Press</publisher>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>2 edition</note>
+</biblStruct>
+
+<biblStruct xml:id="b51">
+	<analytic>
+		<title level="a" type="main">The new gold standard: The rise of randomized control trials and experimental development</title>
+		<author>
+			<persName><forename type="first">Sophie</forename><surname>Webber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carolyn</forename><surname>Prouse</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Economic Geography</title>
+		<imprint>
+			<biblScope unit="volume">94</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="166" to="187" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b52">
+	<monogr>
+		<title level="m" type="main">From parity to preference-based notions of fairness in classification</title>
+		<author>
+			<persName><forename type="first">Muhammad</forename><surname>Bilal Zafar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Isabel</forename><surname>Valera</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manuel</forename><surname>Rodriguez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Krishna</forename><surname>Gummadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adrian</forename><surname>Weller</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="volume">30</biblScope>
+		</imprint>
+	</monogr>
+	<note>Advances in neural information processing systems</note>
+</biblStruct>
+
+<biblStruct xml:id="b53">
+	<monogr>
+		<author>
+			<persName><forename type="first">Stephan</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Trott</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sunil</forename><surname>Srinivasa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikhil</forename><surname>Naik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melvin</forename><surname>Gruesbeck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><forename type="middle">C</forename><surname>Parkes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Socher</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2004.13332</idno>
+		<title level="m">The AI Economist: Improving equality and productivity with AI-driven tax policies</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b54">
+	<analytic>
+		<title level="a" type="main">Optimal and fair encouragement policy evaluation and learning</title>
+		<author>
+			<persName><forename type="first">Angela</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">36</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b55">
+	<analytic>
+		<title level="a" type="main">Learning fair policies in decentralized cooperative multi-agent reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Matthieu</forename><surname>Zimmer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Claire</forename><surname>Glanois</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Umer</forename><surname>Siddique</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Weng</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="12967" to="12978" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

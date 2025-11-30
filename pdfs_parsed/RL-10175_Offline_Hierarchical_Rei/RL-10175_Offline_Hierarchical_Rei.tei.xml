@@ -1,0 +1,2063 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">OFFLINE HIERARCHICAL REINFORCEMENT LEARNING VIA INVERSE OPTIMIZATION</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Carolin</forename><surname>Schmidt</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Technical University of Denmark</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Daniele</forename><surname>Gammelli</surname></persName>
+							<email>gammelli@stanford.edu</email>
+							<affiliation key="aff1">
+								<orgName type="institution">Stanford University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">James</forename><surname>Harrison</surname></persName>
+							<email>jamesharrison@google.com</email>
+							<affiliation key="aff2">
+								<orgName type="department">Google DeepMind</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Marco</forename><surname>Pavone</surname></persName>
+							<email>pavone@stanford.edu</email>
+							<affiliation key="aff1">
+								<orgName type="institution">Stanford University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Filipe</forename><surname>Rodrigues</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Technical University of Denmark</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">OFFLINE HIERARCHICAL REINFORCEMENT LEARNING VIA INVERSE OPTIMIZATION</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">794E1B12A2761834FA8E6C7F2BFE26A0</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2025-11-30T00:15+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Hierarchical policies enable strong performance in many sequential decision-making problems, such as those with high-dimensional action spaces, those requiring long-horizon planning, and settings with sparse rewards. However, learning hierarchical policies from static offline datasets presents a significant challenge. Crucially, actions taken by higher-level policies may not be directly observable within hierarchical controllers, and the offline dataset might have been generated using a different policy structure, hindering the use of standard offline learning algorithms. In this work, we propose OHIO: a framework for offline reinforcement learning (RL) of hierarchical policies. Our framework leverages knowledge of the policy structure to solve the inverse problem, recovering the unobservable high-level actions that likely generated the observed data under our hierarchical policy. This approach constructs a dataset suitable for off-the-shelf offline training. We demonstrate our framework on robotic and network optimization problems and show that it substantially outperforms end-to-end RL methods and improves robustness. We investigate a variety of instantiations of our framework, both in direct deployment of policies trained offline and when online fine-tuning is performed. Code and data are available at https://ohio-offline-hierarchical-rl.github.io</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">INTRODUCTION</head><p>Deep reinforcement learning (RL) and optimal control (OC) have made significant progress within a broad range of continuous control tasks, such as locomotion skills <ref type="bibr" target="#b32">(Lillicrap et al., 2015)</ref>, dexterous manipulation <ref type="bibr" target="#b54">(Zhu et al., 2019)</ref>, and robotic navigation <ref type="bibr" target="#b33">(Long et al., 2018)</ref>. However, most of these tasks are inherently atomic, as they can be completed by performing basic skills episodically rather than through complex multi-level reasoning. Hierarchical policy decompositions, in which multiple subpolicies are composed to perform control at successively higher levels of temporal and representational abstraction, have long held the promise to help solve such complex tasks <ref type="bibr" target="#b5">(Barto &amp; Mahadevan, 2003;</ref><ref type="bibr" target="#b35">Nachum et al., 2018)</ref>. Specifically, by defining a hierarchy of policies where higher levels influence the behavior of the lower levels, it becomes easier to train high-level policies to plan over longer time scales. Moreover, approaches for OC often leverage problem-specific structure by constructing hierarchical policies over convenient state representations, e.g., planning in operational space as opposed to direct joint space control for robot manipulation <ref type="bibr" target="#b25">(Khatib, 1987;</ref><ref type="bibr" target="#b38">Peters &amp; Schaal, 2008)</ref>.</p><p>Similarly, sequential decision-making systems operating in the real world-such as vehicle routing and traffic control <ref type="bibr" target="#b40">(Rasheed et al., 2020;</ref><ref type="bibr" target="#b51">Zardini et al., 2022)</ref>, supply chain management <ref type="bibr" target="#b42">(Rolf et al., 2023)</ref>, and power grid optimization <ref type="bibr" target="#b13">(Duan et al., 2019)</ref>, among many others-have historically benefited from hierarchical abstractions. Hierarchically structured policies are commonly used to (i) decompose a large optimization problem into smaller, tractable ones <ref type="bibr" target="#b15">(Fluri et al., 2019)</ref>, and (ii) combine the benefits of differently-structured sub-policies, such as integrating learning-based methods with direct optimization <ref type="bibr" target="#b12">(Delarue et al., 2020;</ref><ref type="bibr" target="#b18">Gammelli et al., 2023)</ref>.</p><p>Nevertheless, there remains a significant gap between the theoretical promise of hierarchically structured policies and their practical application to complex, real-world decision-making problems: previous work often relies on costly online data collection, which is impractical for real-world, safety-critical systems. To address this issue, offline RL has gained attention for its ability to train policies from static offline datasets, thus avoiding the need for expensive or unsafe online exploration.</p><p>Figure <ref type="figure">1</ref>: We propose OHIO, a framework to learn hierarchical policies from offline data. By exploiting structural knowledge of the low-level policy, we solve an inverse problem (top center) to transform low-level trajectory data (top left) into a dataset amenable to offline RL (top right), regardless of the nature of the policy used for data collection. At inference time, the RL-trained policy provides inputs to the low-level policy (bottom).</p><p>However, offline policy learning has had a limited impact within hierarchical formulations due to two fundamental issues. First, unless we assume that offline data collection is performed using the same hierarchical policy that we intend to learn, actions across hierarchy levels may not be observable, thus hindering the direct application of standard offline RL algorithms. Second, even if the offline dataset is collected using a hierarchical policy, any modifications to the hierarchical controller or its components can lead to ill-posed offline RL formulations.</p><p>In this work, we propose a framework to learn hierarchical behavior policies from offline data, OHIO: Offline Hierarchical reinforcement learning via Inverse Optimization. Specifically, we solve the inverse problem, mapping state transitions <ref type="bibr">(and, optionally, low-level actions)</ref> to the high-level actions that likely generated those transitions. This approach allows us to create a dataset that can be used by standard offline RL algorithms within any hierarchical policy scheme, regardless of the nature of the policy used for data collection (Figure <ref type="figure">1</ref>).</p><p>Contributions. Concretely, the contributions of this work are:</p><p>• We present a novel framework for hierarchical offline RL that leverages structural knowledge of the hierarchical policy to construct a dataset amenable to off-the-shelf offline RL algorithms. • We derive principled inverse optimization objectives to solve the inverse problem both analytically and numerically, thus making our method amenable to generic policy structures and behavior policies used for data collection. • We investigate design decisions and learning strategies within our framework, such as the impact of model learning, the choice of inverse optimization algorithm, dataset characteristics, and their impact on system performance and fine-tuning capabilities. • Through experiments on robotic tasks, supply chain inventory control, and dynamic vehicle routing, we show how our framework substantially improves the performance of off-the-shelf offline learning algorithms across a diverse set of embodiments and policy structures, while providing the safety guarantees needed for safe, real-world deployment.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">PROBLEM STATEMENT</head><p>We consider a discounted infinite horizon Markovian problem setting in which an agent interacts with a Markov decision process M = (S,A,P,r,γ). We denote the state and action at time t as s t , and a t , and S,A are the state and action spaces, respectively. Additionally, P (s t+1 | s t ,a t ) denotes the (probabilistic) state transition dynamics, r(s t ,a t ) denotes the reward function, and γ is the discount factor.</p><p>For brevity, we will also refer to single state transitions using s and s ′ for s t and s t+1 , respectively.</p><p>We will consider learning a hierarchical policy consisting of two components, u ∼ π u (• | s), a ∼ π l (• | s,u),</p><p>(1) where π u denotes a learned upper policy, and π l denotes a fixed lower-level policy, and u is the output of the upper policy that is an input to the lower-level policy. Our approach is generally agnostic to the form of the lower-level policy, although we will identify important example cases in the next section.</p><p>We focus on the case where the dataset comprises state-only trajectories, specifically considering τ i = (s 0 ,s 1 ,...,s T ) or τ i = (s 0 ,r 0 ,s 1 ,r 1 ,...,s T ). In this context, we assume access to approximate dynamics P and reward models. These assumptions are reasonable, as our work targets common scenarios where certain elements of domain knowledge are inherently available. For instance, in robotic manipulation, having access to a robot arm's dynamics model is not only standard practice but essential for operating any low-level controller. Similarly, in network decision systems, real-world algorithms often depend on deterministic approximations of system dynamics. For example, the analysis of transportation systems frequently employs simple macroscopic models derived from traffic flow theory.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">METHODOLOGY</head><p>In this section, we provide a comprehensive overview of the OHIO framework. We begin by presenting each component in a general setting, followed by specific examples of their implementations. The section begins with a discussion of the lower-level policies used and then moves on to address the inverse optimization problem and its corresponding solution methods. Lastly, we present the overall framework.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">LOWER-LEVEL POLICIES</head><p>We will broadly consider two classes of lower-level policies: explicit and implicit policies. We distinguish between these two classes of policies, which are necessarily treated differently in policy inversion.</p><p>Explicit policies. (Stochastic) explicit policies require only a single function evaluation, or a = f (s,u,ε),</p><p>(2) where ε is a generic random variable (enabling policy stochasticity through reparameterization) and f is a generic function. This class of policies is broad. It includes policies that range from simple feedback controllers-such as PID, or linear state-space controllers such as those computed via LQR-to more complex policies such as those parameterized by neural networks and learned by RL or imitation learning (IL).</p><p>Implicit policies. Implicit policies, on the other hand, are defined as</p><formula xml:id="formula_0">arg min a ∈ A f (s,a,u),<label>(3)</label></formula><p>or approximate solutions thereof. This class includes optimization-based policies such as Model Predictive Control (MPC) <ref type="bibr" target="#b41">(Rawlings &amp; Mayne, 2013)</ref>, and implicit learning-based policies such as diffusion-based or other implicit methods <ref type="bibr" target="#b10">(Chi et al., 2023;</ref><ref type="bibr" target="#b14">Florence et al., 2022)</ref>. Example 3.1 (Linear-quadratic-Gaussian). Let us consider a quadratic cost (negative reward) function with linearized Gaussian dynamics, where we assume the output of the upper policy, denoted as π u , is a goal post-transition state. Specifically, by Taylor-expanding the reward function (yielding terms m and M ) and approximate dynamics around the current state and zero action, the optimization problem becomes:</p><formula xml:id="formula_1">arg max a ∈ A - 1 2 E s ′ ∥a-m∥ 2 M +∥s ′ -u∥ 2 V s.t. s ′ ∼ N (As+Ba+c,Σ), (<label>4</label></formula><formula xml:id="formula_2">)</formula><p>where u is the goal state, V is an arbitrary matrix that weighs satisfaction of achieving this goal state versus satisfying other reward terms<ref type="foot" target="#foot_0">1</ref> , and A,B,c are the terms resulting from Taylor-expanding the known dynamics. The solution to this problem is computationally tractable. In particular, if the action is unconstrained, this corresponds to a variant of the linear quadratic regulator (LQR) problem, where the optimal action is a * = Ku+k with policy parameters K,k depending on the reward function and dynamics.<ref type="foot" target="#foot_1">2</ref> </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">POLICY INVERSION</head><p>Our framework aims to map available data to high-level action representations. In particular, we aim to compute high-level trajectories τi = (s 0 ,u 0 ,r 0 ,...,s T ) given a dataset of lower-level trajectories τ i .</p><p>Lower-level policy inversion. The core of our approach is to exploit the known optimization structure of the inner problem to approximately compute the most likely high-level action inducing each state transition and use these for offline training. We treat this problem as a probabilistic inference problem and aim to solve the regularized maximum likelihood estimation problem:</p><formula xml:id="formula_3">û0:T -1 = arg max u 0:T -1 log P (s 1:T | a 0:T -1 ,s 0:T -1 )+ t L(u t ) s.t. a t = π l (s t ,u t ) ∀t,<label>(5)</label></formula><p>which is constructed jointly across each trajectory, and where L denotes a regularization term. We require an approximate dynamics model P . In many applications, a simple approximate dynamics model, which only needs to be reasonably accurate for one timestep, is already known. This is often the case in robotics, where approximate models of the robot's dynamics are used for trajectory planning and motion control. In other scenarios, a dynamics model can be learned from the dataset. The use of an approximate dynamics model makes OHIO a novel combination of model-based and model-free RL.</p><p>It leverages model information locally in time, while long-horizon performance is achieved through the RL-based component. This ensures the overall framework is not susceptible to compounding errors from multi-step prediction. When low-level actions are observed, as in the classical offline RL setting, we can bypass the need for an approximate dynamics model, as discussed in Appendix A.1.</p><p>In practice, we will decompose this joint likelihood across time and, assuming that the policy is stochastic, solve the one-timestep problem:</p><formula xml:id="formula_4">ût = arg max u t log P (s t+1 | a t ,s t )+L(u t ) s.t. a t = π l (s t ,u t ).<label>(6)</label></formula><p>In cases where the policy is deterministic and the likelihood under the policy is not well-defined, a simple alternative loss function (e.g., MSE loss) is used instead. This decomposition across time is sub-optimal, and the original joint-across-time problem has strong similarities to classical filtering and smoothing in partially-observed systems. However, we find that it is effective for our experiments due to the structure of many decision-making problems, leaving the consideration of the full joint likelihood for future work.</p><p>Solving the policy inversion problem analytically. How is this inverse problem solved? We will first illustrate one possible approach by building on the previous example. Example 3.2 (Analytical inverse: solving the inverse linear-quadratic problem). Here, we will continue Example 3.1, and discuss the solution of the inverse problem. Specifically, given the linearized Gaussian dynamics derived in Example 3.1:</p><formula xml:id="formula_5">P (s ′ | s,a * ) = N (As+Ba * +c,Σ), for a * = π l (s,u),<label>(7)</label></formula><p>whereby a * = Ku+k. The goal of the inverse problem is to compute the most likely high-level actions u by solving Problem 6. By substituting a * into P (s ′ | s, a * ), we obtain the following likelihood function describing the objective function for our inverse problem:</p><p>N (As+BKu+Bk+c,Σ).</p><p>(8) By expressing the likelihood in log terms and leveraging the fact that the log-likelihood is concave in u, we can easily derive its maximum value as:</p><formula xml:id="formula_6">û = (BK) † (s ′ -(As+c+Bk)),<label>(9)</label></formula><p>where (•) † denotes the Moore-Penrose inverse. We can then use û, a * , and s to compute the reward rt . Ultimately, this leads to an analytical solution to the inverse problem via Equation <ref type="formula" target="#formula_6">9</ref>. This unconstrained linear-quadratic setting is one of the few that can be solved exactly. However, we emphasize an important distinction with work on differentiable optimization <ref type="bibr" target="#b0">(Agrawal et al., 2019)</ref> and prior work on structured policies <ref type="bibr" target="#b3">(Amos et al., 2018)</ref>: our RL-based outer policy training does not require gradient propagation through the optimization problem, and thus any method may be used to solve the inverse problem. Indeed, because the inverse problem only needs to be solved to construct a dataset for offline training, comparatively expensive methods can be used. Solving the policy inversion problem numerically. Several methods exist beyond analytical solutions, and our framework is agnostic to the method used. For discrete high-level actions, the inverse problem can be solved by exhaustive search over u. Similarly, we can employ sampling techniques for u or zeroth-order optimization such as CEM <ref type="bibr" target="#b44">(Rubinstein, 1997;</ref><ref type="bibr" target="#b11">De Boer et al., 2005)</ref>. In certain cases, exact gradients may be computed through the inner problem, enabling the use of gradient-based optimization -such as gradient descent-to solve Problem 6. Thus, the numerical solution of the inverse problem is a considerably more general approach. More details are provided in Appendix A.4</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">FULL METHODOLOGY</head><p>Algorithm 1 highlights the relative simplicity of our approach: it focuses on leveraging approximate knowledge of the system dynamics and reward function to derive likely high-level actions and rewards. Subsequently, we apply off-the-shelf offline RL algorithms-including behavior cloning as a special case-on this dataset.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">RELATED WORK</head><p>Our work is closely related to previous approaches to learning control within hierarchical policies <ref type="bibr" target="#b24">(Ichter et al., 2018;</ref><ref type="bibr" target="#b4">Bansal et al., 2020;</ref><ref type="bibr" target="#b50">Xia et al., 2021;</ref><ref type="bibr" target="#b31">Lew et al., 2023)</ref> and offline RL within these settings <ref type="bibr" target="#b30">(Le et al., 2018;</ref><ref type="bibr" target="#b20">Gupta et al., 2019;</ref><ref type="bibr" target="#b53">Zhou et al., 2021;</ref><ref type="bibr" target="#b1">Ajay et al., 2021;</ref><ref type="bibr" target="#b43">Rosete-Beas et al., 2023)</ref>, providing a way to train general-purpose hierarchical policies from offline data.</p><p>Hierarchical and Bi-Level RL. Hierarchical IL jointly learns high-level policies and low-level controllers from optimal demonstrations <ref type="bibr" target="#b30">(Le et al., 2018;</ref><ref type="bibr" target="#b20">Gupta et al., 2019)</ref>. These methods have two main drawbacks: (i) they typically learn high-level actions in the form of sub-goals, thus, in the raw observation space, and (ii) they require oracle trajectory data. Our method alleviates both of these drawbacks by (i) learning high-level policies in an intermediate (potentially lower-dimensional) representation space, and (ii) leveraging offline RL methods to learn from sub-optimal data. Another class of methods uses offline RL to train the high-level policy in learned latent spaces <ref type="bibr" target="#b53">(Zhou et al., 2021;</ref><ref type="bibr" target="#b1">Ajay et al., 2021)</ref>. However, the policy used to generate the offline datasets may not match the hierarchical structure that we are interested in learning. Therefore, prior work typically formulates potentially complex, multi-step training schemes for the individual policy components, e.g., unsupervised trajectory autoencoders combined with hindsight relabeling to collect a dataset with the inferred high-level latent action and the respective reward <ref type="bibr" target="#b43">(Rosete-Beas et al., 2023)</ref>. To address these limitations, in our framework, we leverage approximate knowledge of the system dynamics to compute the most likely high-level action from raw trajectory data, thus avoiding the misalignment caused by intermediate objectives that do not necessarily correlate with the downstream task (e.g., reconstruction losses within generative models).</p><p>In robotics, numerous strategies have been developed for learning control with bi-level formulations that leverage traditional planning methods as inner components. For instance, prior work focuses on decomposing the overall policy into a high-level learned policy that generates waypoint-like representations for a low-level motion planner, e.g., based on sampling-based search <ref type="bibr" target="#b24">(Ichter et al., 2018;</ref><ref type="bibr" target="#b50">Xia et al., 2021)</ref>, model-based planning <ref type="bibr" target="#b4">(Bansal et al., 2020)</ref>, or trajectory optimization <ref type="bibr" target="#b31">(Lew et al., 2023)</ref>. Within this context, the high-level policy is typically learned through either imitation of oracle waypoint selection strategies or online RL. Analogously to previous methods, our approach uses the output of a higher-level, learned policy in a hierarchical structure. Crucially, however, we focus on solving complex control tasks from offline data by constructing datasets amenable to off-the-shelf offline RL algorithms.</p><p>Offline RL and Learning from State-Only Demonstrations. Lastly, our work is closely related to methods for learning from observations (LfO), by introducing a framework for offline RL from (potentially) state-only demonstrations. Distribution matching methods represent a principled approach to LfO <ref type="bibr" target="#b7">(Boborzi et al., 2022)</ref>, <ref type="bibr" target="#b26">(Kim et al., 2022)</ref> by interactively estimating and minimizing the discrepancy between two stationary distributions: one generated by the expert and another by the learning agent. However, traditional approaches based on distribution matching typically require online interactions with the environment, with limited applications to tasks where exploration is expensive or unsafe. Moreover, methods that focus on learning from offline data typically cast LfO as an imitation learning problem, whereby the goal is to imitate the behavior of an expert policy and, thus, the overall performance can be limited by the quality of the data collection policy <ref type="bibr">(Zhu et al., 2020b)</ref>, <ref type="bibr" target="#b39">(Qin et al., 2023)</ref>, <ref type="bibr" target="#b6">(Bewley et al., 2001)</ref>. To address these limitations, our work introduces a new offline LfO approach to recover optimal policies from (potentially sub-optimal) state-only demonstrations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">EXPERIMENTS</head><p>In this section, we demonstrate the performance and broad applicability of our framework, OHIO, on two robotics scenarios (Section 5.1) and two real-world network optimization problems (Section 5.2). In particular, in the robotics scenarios, we evaluate a practical application of OHIO, where the high-level policy is learned through RL, and the low-level policy is an explicit policy, i.e. traditional, non-learned controller. In the network optimization scenarios, we demonstrate the performance of a particularly relevant instantiation of our framework, in which the low-level policy is optimization-based.</p><p>The goal of our experiments is to address the following key questions: (1) Can OHIO successfully recover hierarchical policies from datasets collected by arbitrary (i.e., non-hierarchical) behavior policies? (5.1, 5.2) (2) How do different inverse methods compare in performance? (5.1.1) (3) Does OHIO enable effective offline RL even when the dataset is collected with different or unknown low-level configurations? (5.1.2) (4) How does OHIO compare to traditional hierarchical RL? (5.1.2) (5) Does OHIO improve scalability and robustness relative to end-to-end approaches? (5.2) Benchmarking. To isolate the contributions of OHIO, our analyses include the following comparisons: (i) OHIO with a known low-level policy, (ii) a traditional hierarchical RL approach with a known low-level policy but without the dataset reconstruction provided by OHIO (i.e., "Observed State" baseline, which selects the next observed state as the high-level action), (iii) a hierarchical RL formulation (i.e., "HRL") in which both high-level and low-level policies are learned, and (iv) "flat" end-to-end approaches (i.e., "End-to-End") with minimal architectural differences in the RL policy.</p><p>Experimental design. The learning algorithms used in this section include both off-the-shelf offline RL approaches (e.g., IQL <ref type="bibr" target="#b28">(Kostrikov et al., 2021)</ref>, CQL <ref type="bibr" target="#b29">(Kumar et al., 2020)</ref>) and behavioral cloning (BC) algorithms. Dataset collection follows standard practices specific to each environment, such as (pre-trained) RL policies in robotics scenarios and domain-driven optimization or heuristic-based policies in network optimization. For consistent comparisons across datasets, we normalize scores to a range of 0 to 100, calculated as normalized score = 100 * score online RL performance (robotics) and normalized score = 100 * score oracle performance (network-optimization).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">ROBOTICS</head><p>In this section, we focus on two distinct robotics scenarios: the first, traditionally solved using an end-to-end approach, is detailed in Section 5.1.1; the second scenario is typically addressed with a hierarchical reinforcement learning framework that includes non-learned lower-level controllers (i.e., RL policies guiding operational-space controllers for manipulation tasks), as discussed in Section 5.1.2.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1.1">GOAL-DIRECTED CONTROL</head><p>We evaluate OHIO in a non-linear system using the Reacher task <ref type="bibr" target="#b48">(Tunyasuvunakool et al., 2020)</ref>, where the objective is to control a two-jointed robotic arm to move its end-effector to a randomly positioned target. This task is particularly suitable because it allows us to derive low-level policies with an analytical solution to the inverse problem, facilitating the comparison of different inverse methods-specifically, numerical approaches like gradient-based optimization versus analytical methods. Additionally, since this task is typically solved using end-to-end approaches, it serves as an effective demonstration of OHIO's capability to transform a "flat" (non-hierarchical) offline dataset into one suitable for offline hierarchical reinforcement learning.</p><p>Datasets. Our objective is to learn a policy from a dataset of non-hierarchical demonstrations (i.e. collected by an expert RL policy) using behavioral cloning (BC).</p><p>The inverse problem. We formulate the low-level policy as a linear feedback policy, specifically a finite-horizon LQR, where the high-level action is a goal state (position and velocity of robot joints).</p><p>The detailed derivation of the inverse problem is provided in Appendix B.1.1.</p><p>Choice of inverse algorithm. We first evaluate OHIO under ideal conditions, on low-level demonstration data collected within the same hierarchical framework, i.e. a trained higher-level RL policy coupled with a lower-level LQR controller, and by assuming access to approximate dynamics for the inverse method. We refer to this case as "HR Dataset". Results in Table <ref type="table" target="#tab_1">1</ref> demonstrate that OHIO can learn a policy closely matching the performance of the dataset. On the other hand, the baseline that selects the observed next state as the high-level action (i.e., "Observed State") results in an ineffective policy.</p><p>Access to the approximate (linearized) dynamics of the robotic arm is common practice and essential for operating the lower-level controller. However, we also investigate a more challenging scenario involving a dataset derived from demonstrations by an end-to-end agent (i.e., "E2E Dataset"). In this setting, we do not assume access to a dynamics model for policy inversion; instead, we learn an approximate model directly from the dataset. The results demonstrate that, despite the data being sourced from a different (i.e. flat) policy structure, OHIO achieves performance comparable to that of the end-to-end policy.</p><p>To evaluate OHIO's robustness to model misspecifications in the lower-level controller, we perturb the LQR parameters by increasing either the state or control cost by a factor of 10, resulting in datasets "E2E-10S" and "E2E-10C", respectively. The results in Table <ref type="table" target="#tab_1">1</ref> reveal that while the analytical inverse is fast and exact, it is more susceptible to model misspecifications. Conversely, the numerical inverse maintains consistent performance across scenarios.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1.2">ROBOTIC MANIPULATION</head><p>Robotic manipulation tasks often benefit from integrating learning-based and non-learning-based components, making them an ideal domain for evaluating our proposed method. RoboSuite <ref type="bibr">(Zhu et al., 2020a</ref>) is a widely used robotic manipulation environment that closely aligns with standard practices in real-world robotic implementations. In this setup, an RL agent interacts with a lower-level controller, abstracting away the direct control of joint torques.</p><p>Datasets. We generate datasets for two tasks within the RoboSuite environment:Block Lifting (i.e., "Lift") and Door Opening (i.e., "Door"). We follow a popular approach for offline RL data collection and utilize the replay buffers collected during online RL training. The default RoboSuite environment operates within a hierarchical framework, allowing for the collection of both high-level and low-level actions. This configuration enables us to evaluate OHIO's performance in reconstructing high-level actions in comparison to training on the original actions. Furthermore, we can assess OHIO's potential to facilitate effective offline RL under modified controller settings.</p><p>The inverse problem. We utilize the operational space controller of RoboSuite as our low-level policy, which computes the joint torques required to minimize the error between the current and goal pose (both position and orientation) of the end-effector. In this experiment, we use numerical inversion, showcasing the broad applicability of OHIO even in the absence of a closed-form solution for policy inversion.</p><p>Robustness to low-level controller configurations. The results presented in RL tends to perform well when paired with the original controller used for data collection; however, its performance deteriorates significantly when the lower-level controller is configured with different parameters (IQL performance with modified stiffness and damping). In contrast, OHIO demonstrates strong performance across a wide range of parameters and tasks. Importantly, these findings demonstrate OHIO's potential to facilitate effective offline RL, even when data is collected using varied or unknown low-level configurations-a challenge that is exceedingly common in practical applications.</p><p>Moreover, results in Table <ref type="table">3</ref> indicate that despite utilizing the same subgoal representation and lower-level policy as OHIO, the "Observed State" baseline struggles to learn the task effectively. This outcome clearly highlights the importance of the policy inversion method in enhancing performance.</p><p>Choice of low-level policy. Additionally, the results in Table <ref type="table">3</ref> indicate that OHIO can improve the performance over HRL while allowing RL-based policies to be combined with standard low-level controllers. Decreasing the dataset size ("Door -Red. Data") reveals another advantage of OHIO: the performance of low-level action reconstruction is independent of dataset quality and coverage, whereas HRL shows a clear performance drop when not provided with an extensive dataset.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">NETWORK OPTIMIZATION</head><p>In this section, we examine two real-world examples of societally-critical systems: vehicle routing and supply chain management. These problems represent real-world systems characterized by key features: (i) high-dimensional action spaces, such as nodes and edges in a large transportation network, (ii) complex system-level constraints that need to be strictly satisfied at all times (e.g., capacity limitations in warehouses), and (iii) readily available offline datasets of state transitions from system operators.</p><p>Problem settings. Vehicle routing problems are central to a wide range of mobility and logistics applications. The primary objective is to identify the least-cost routes for a fleet of vehicles while meeting the demands of geographically dispersed customers. In a similar vein, supply chain inventory management involves the strategic ordering and distribution of products within a network of interconnected warehouses and stores. The goal is to satisfy customer demand while minimizing system costs, which may include storage, transportation, and out-of-stock penalties, all while adhering to operational constraints like storage capacities. Comprehensive descriptions of the environments can be found in Appendices B.3 and B.4.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Datasets.</head><p>To generate offline datasets, we simulate the operation of mobility-on-demand services and supply chains using both optimization and heuristic-based policies. In the vehicle routing scenario, we collect eight datasets across two real-world urban settings-NYC and Shenzhen-utilizing four different behavior policies: informed rebalancing ("INF") <ref type="bibr" target="#b49">(Wallar et al., 2018)</ref>, dynamic trip-vehicle assignment (DTV) (Alonso-Mora et al., 2017), a demand-proportional heuristic ("PROP"), and a random dispersion heuristic ("DISP"). For the supply chain scenario, we collect four datasets across two systems: one warehouse with three ("1W3S") and ten stores ("1W10S"), respectively. These datasets are generated using an optimization-based policy ("MPC") and a heuristic ("HEU") policy.</p><p>We record the low-level actions, which represent the flows of vehicles or goods across the network. The inverse problem. We formulate the low-level optimization policies as linear programs (LPs), which allows us to exploit the fact that the inverse optimization problem of an LP can itself be formulated as an LP <ref type="bibr" target="#b9">(Chan C. Y. et al., 2022)</ref>. In practice, this results in an L1-norm minimization problem, thus projecting the low-level action onto the space of high-level actions within a feasible set of solutions. Specifically, the higher-level action commands a goal state representing a distribution of the commodities to be controlled (i.e. vehicles or goods). Please refer to Appendices B.3.5 and B.4.5 for a detailed derivation of the inverse.</p><p>Scalability and robustness in direct deployment. Results in Table <ref type="table" target="#tab_3">4</ref> highlight a significant advantage of OHIO, which consistently outperforms E2E approaches. As observed in previous studies <ref type="bibr" target="#b15">(Fluri et al., 2019;</ref><ref type="bibr" target="#b16">Gammelli et al., 2021;</ref><ref type="bibr" target="#b46">Skordilis et al., 2022;</ref><ref type="bibr" target="#b45">Singhal et al., 2024</ref>) E2E policies struggle with the high-dimensional action space inherent in large networks. Specifically, real-world transportation networks exhibit dense graph structures that result in an exponential growth of the (low-level) action spaces-196-and 289-dimensional for NYC and SHZ. In contrast, OHIO effectively capitalizes on the dimensionality reduction induced by the hierarchical decomposition, leading to 14-and 17-dimensional high-level action spaces for NYC and SHZ, respectively.</p><p>Similarly, Results in Table <ref type="table" target="#tab_4">5</ref> highlight several important insights. First, OHIO enhances the performance of offline learning algorithms that require querying the value function on unseen actions during training (e.g., CQL). As noted in <ref type="bibr" target="#b29">(Kumar et al., 2020)</ref>, sample-based value estimation in high-dimensional action spaces poses significant challenges due to high variance and the curse of dimensionality. In this context, the hierarchical decomposition introduced by OHIO allows for more accurate value function estimation through dimensionality reduction, resulting in a more stable offline learning process.</p><p>Second, at first glance, there may not appear to be a clear advantage of OHIO when employing BC and IQL in the context of moderately sized graphs. However, the results in  Robustness in online fine-tuning. We further examine various scenarios of practical relevance, including fine-tuning policies that (i) are trained on sub-optimal data (Figure <ref type="figure" target="#fig_0">2a</ref>), and (ii) must adapt to out-of-distribution bias (Figure <ref type="figure" target="#fig_0">2b</ref>). Although both policies yield similar results during direct deployment (in the case of IQL), Figure <ref type="figure" target="#fig_0">2</ref> illustrates that OHIO policies demonstrate significantly greater stability and robustness during fine-tuning. The OHIO policy consistently improves upon the performance of the sub-optimal and biased policy it was trained on, whereas the E2E policy rapidly declines to a score below zero. Crucially, this degradation coincides with the E2E policy violating constraints during online interaction with the environment. This issue likely arises from two factors: (i) constraint violations are rarely included in offline datasets, as current operators must adhere to critical constraints during operations, and (ii) achieving hard guarantees within E2E architectures is challenging. In contrast, the OHIO policy can effectively encode domain-specific constraints through its low-level optimization-based policy, thereby avoiding infeasible out-of-distribution states by design.</p><p>Alongside the safety guarantees provided, this framework enables current system operators to train policies using offline data until they achieve a satisfactory level of performance. Subsequently, they can deploy these policies while safely enhancing performance through online interactions with the system.</p><formula xml:id="formula_7">s t u t a t r t s t+1 u t+1 a t+1 r t+1</formula><p>Figure <ref type="figure" target="#fig_3">3</ref>: A graphical model for the system evolution, assuming Markovian dynamics and policies.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A ALGORITHMIC DETAILS</head><p>In this section, we provide further algorithmic details, and discuss practicalities of the policy inversion problem.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1 POLICY INVERSION IN THE OBSERVED-ACTION CASE</head><p>We consider the case in which we assume access to a dataset D = {τ i } N i=1 consisting of trajectories τ i = (s 0 ,a 0 ,r 0 ,s 1 ,...,s T ). This matches the information available in the classical offline RL setting; note that, critically, we do not assume access to upper-level actions u.</p><p>Lower-level policy inversion. Our approach aims to recover the high-level actions that generated the observed low-level actions. We treat this problem as a probabilistic inference problem, and aim to solve the (regularized) maximum likelihood estimation problem</p><formula xml:id="formula_8">û0:T = arg max u 0:T -1 log p(a 0:T | u 0:T ,s 0:T ,r 0:T )+ t L(u t ) s.t. a t = π l (s t ,u t ) ∀t,<label>(10)</label></formula><p>which is constructed jointly across each trajectory, and where L denotes a regularization term, e.g., L 2 regularization of the high-level actions. In practice, we will decompose this joint likelihood across time and (assuming that the policy is stochastic) solve the one-timestep problem, ût = arg max</p><formula xml:id="formula_9">u t log π l (a t | s t ,u t )+L(u t ).<label>(11)</label></formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 POLICY INVERSION PROBLEM STATEMENT</head><p>The policy inversion problem is to recover u 0:T from available data, provided in τ i (corresponding to episode i), which includes either states, possibly actions, and possibly rewards. We include a graphical model for the system evolution in Figure <ref type="figure" target="#fig_3">3</ref>, in the case where only the high-level actions are unobserved. In general, we may assume the low-level actions and/or the rewards are also unobserved.</p><p>There are numerous inferential procedures for the graphical model specified in Figure <ref type="figure" target="#fig_3">3</ref>. In particular, EM-based methods or variational inference methods are possible to characterize uncertainty, and are well-established in e.g. hidden Markov models. In our settings, however, the mapping from high-level action to low-level action is typically underdetermined, and thus the inverse mapping is typically overdetermined. For example, in network control tasks, the high-level action corresponding to a goal state may be satisfied by many low-level (edge flow) actions.</p><p>Thus, we turn to a regularized maximum likelihood approach, û0:T = arg max</p><formula xml:id="formula_10">u 0:T log p(τ i | u 0:T )+L(u 0:T )<label>(12)</label></formula><p>which we decompose across time as previously mentioned, yielding inferential procedures shown in Figure <ref type="figure" target="#fig_1">4</ref>.</p><p>In the action-observed case, it is sufficient to directly invert the policy.  In the case of explicit policies, this corresponds to a standard inverse problem, in which one aims to recover the input from an output. In some cases this is analytically tractable (as in the LQR example), but more commonly one must turn to numerical optimization, in which the objective corresponds to minimizing predictive error.</p><p>For implicit policies-especially optimization-based policies-this takes the form of inverse optimization <ref type="bibr" target="#b9">(Chan C. Y. et al., 2022)</ref>. Inverse optimization is analytically tractable in limited cases, but more generally one must turn to numerical methods.</p><p>When actions are not observed, the inversion procedure is similar to the action observed case. In contrast to e.g. EM procedures (which may be a natural inferential scheme to recover a,u jointly) we first compute a point estimate of a based on state transitions, and in turn use this to compute a point estimate u. While this may induce error in the inverse problem, we have found this scheme to work effectively in the settings we consider. Typically, systems dynamics are explicit-as opposed to optimization-based dynamics, which can occur for example in robotics with contact or multi-agent decision-making <ref type="bibr" target="#b23">(Howell et al., 2022)</ref>. Thus, if we define our dynamics as s ′ = g(s,a), logp(s ′ | s,u) is straightforwardly written in terms of a,u,s, leading to a similar objective to the action-observed case.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3 INVERSE PROBLEM: LINEAR-QUADRATIC GAUSSIAN</head><p>In this section, we provide the details on the linear-quadratic example from the body of the paper.</p><p>Recall that the optimization policy is</p><formula xml:id="formula_11">arg max a ∈ A - 1 2 E s ′ ∥a-m∥ 2 M +∥s ′ -u∥ 2 V s.t. s ′ ∼ N (As+Ba+c,Σ)<label>(14)</label></formula><p>where, by substituting, we have</p><formula xml:id="formula_12">arg max a ∈ A - 1 2 E s ′ ∥a-m∥ 2 M +∥As+Ba+c+ϵ-u∥ 2 V (<label>15</label></formula><formula xml:id="formula_13">)</formula><p>for ϵ ∼ N (0,Σ). For the case where A = R dim(A) , this problem is concave, and thus for maximizer a * ,</p><formula xml:id="formula_14">0 = E[M (a * -m)+B T V (As+Ba * +c+ϵ-u)] (16) = M (a * -m)+B T V (As+Ba * +c-u) (17) which yields a * = (M +B T V B) † [B T V (u-As-c)+M m] (18) which corresponds to a * = Ku+k for K = (M +B T V B) † B T V (19) k = (M +B T V B) † (M m-B T V (As+c)).<label>(20)</label></formula><p>To compute the next state density, we can substitute this action, to yield policy density</p><formula xml:id="formula_15">s ′ ∼ N (As+B(Ku+k)+c,Σ)<label>(21)</label></formula><p>which has a concave log-density. Again, the maximizer u * is achieved when</p><formula xml:id="formula_16">0 = (BK) ⊤ Σ -1 (s ′ -As+c+B(Ku+k))<label>(22)</label></formula><p>which is satisfied by</p><formula xml:id="formula_17">u * = (BK) † (s ′ -(As+c+Bk)).<label>(23)</label></formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.4 SOLVING THE INVERSE PROBLEM NUMERICALLY</head><p>We have shown that for a particular choice of inner policy and dynamics models, an analytical solution of the policy inversion problem is possible. While this approach is numerically efficient due to our recursive sensitivity calculation and our exploitation of problem convexity, we can instead turn to numerical solutions.</p><p>First, using automatic differentiation, the sensitivity of the low-level action (or post-transition state) to u may be automatically computed. This enables a partially structured approach, in which we still exploit problem convexity, but automate computations that are potentially error-prone.</p><p>An alternative approach is simply turning to non-convex optimization methods-such as gradient descent-to compute an approximate minimizing u. Indeed, the only requirement for gradient descent is the differentiability of the policy with respect to u, as we have discussed previously. Finally, if the lower level is not differentiable we can resort to gradient-free methods, e.g. CEM. Thus, the numerical solution of the inverse problem is a considerably more general approach, and we will typically favor this approach. Algorithm 2 and Algorithm 3 illustrate the numerical inverse depending on available information in the dataset. Note, that in Algorithm 2, we could also calculate the loss over each state tuples in the lower-level (e.g. L(x i ,s i ), instead of only the resulting state.</p><p>Algorithm 2 Numerical inverse -state-only trajectories 1: Given approximate dynamics A,B 2: Given s,s T ∈ D 3: u ← s ′ 4: for each step do 5:</p><p>Set x 0 ← s 6:</p><p>for i = 0 to T do 7:</p><p>Get action â = π l (x i ,u) 8:</p><p>Unroll system dynamics:</p><formula xml:id="formula_18">x i+1 ← Ax i +Bâ 9:</formula><p>end for 10:</p><p>Compute loss L(x T ,s T ) 11:</p><p>Update u using L total , either using gradient descent or CEM 12: end for Algorithm 3 Numerical inverse with low-level actions a 1: Given, s 1..T ,a 1..T 2: u ← ⃗ 0 3: for each step do 4:</p><p>Initialize cumulative loss L total ← 0 5:</p><p>for i = 0 to T do 6:</p><p>Get action âi = π l (s i ,u)</p><p>7:</p><p>Compute loss L total = +L( âi ,a i ) 8:</p><p>end for 9:</p><p>Update u using L total , either using gradient descent or CEM 10: end for A.5 ASSUMPTIONS ON DATA QUALITY AND PROPERTY OHIO is agnostic to the learning signal used for training the high-level policy and, therefore, does not impose additional data quality assumptions beyond standard offline RL requirements. We demonstrate OHIO's effectiveness with both expert data -collected from trained RL agents and traditional MPC policies-and suboptimal data-gathered from partially trained RL agents, heuristicand optimization-based policies. We note that, when no approximate dynamics model is available, we require that low-level actions are observed to either learn an approximate dynamics model or directly perform policy inversion with low-level actions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B EXPERIMENTAL DETAILS</head><p>In this section, we provide further detail about experiment details for the goal-directed control (Appendix B.1) and manipulation experiments (Appendix B.2). Further, we provide details on environment specifics relating to vehicle routing (Appendix B.3) and supply chain control (Appendix B.4) experiments, respectively and on learning components (Appendix B.5) for the network optimization tasks. The training of our models was executed on a Tesla V100 16 GB GPU.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.1 GOAL-DIRECTED CONTROL</head><p>For the first robotic experiment, we evaluate OHIO on the Reacher-hard task from the DeepMind Control Suite <ref type="bibr" target="#b48">(Tunyasuvunakool et al., 2020)</ref>. The end-to-end policy directly learns the low-level environment actions, whereas our hierarchical framework learns a desired goal state (position and velocity of robot joints), which serves as input to a goal-conditioned finite-horizon Linear Quadratic Regulator (LQR) with a horizon of T = 5. Specifically, the system is linearized at the current state using finite differences, yielding constant linear dynamics A and B. The cost function penalizes deviations from the goal state, and we perform the Riccati recursion over a finite horizon T to compute the time-varying feedback gains for control law a = K(s -u). At each step of the recursion, the optimal feedback gain is computed as</p><formula xml:id="formula_19">K t = -(R+B ⊤ P t+1 B) -1 (B ⊤ P t+1 A), P t = Q+A ⊤ P t+1 (A+BK t ).</formula><p>To generate the datasets, we train both an E2E and a hierarchical SAC policy <ref type="bibr" target="#b21">(Haarnoja et al., 2018)</ref> online and use the final checkpoint to collect the demonstration data. All policy and value function networks are MLPs with two hidden layers, each containing 256 units. Similarly, the learned dynamics model consists of two MLP layers with 256 units each and two output layers that map to the A and B dynamics matrices.</p><p>All datasets used for this experiment consist of 250 episodes of interactions (each consisting of 1000 timesteps). To learn the dynamics model, we use a train/val split of 0.9/0.1.</p><p>The SAC and BC algorithms use the following hyperparameters indicated in Table <ref type="table" target="#tab_7">6</ref>.</p><p>As lower-level policy we use an LQR policy with Our goal is to compute the inverse analytically for an LQR policy that tracks goal state u with a temporal abstraction T to the higher-level policy. First, without temporal abstraction, to compute the next state density, we substitute the action a = K(s-u) to yield the policy density:</p><formula xml:id="formula_20">s ′ ∼ N (As+B(K(s-u))+c,Σ),<label>(24)</label></formula><p>which has a concave log-density. The maximizer u * is achieved when</p><formula xml:id="formula_21">0 = (BK) ⊤ Σ -1 (s ′ -As-B(K(s-u))). (<label>25</label></formula><formula xml:id="formula_22">)</formula><p>This is satisfied by</p><formula xml:id="formula_23">u * = (BK) † ((A+BK)s-s ′ ). (<label>26</label></formula><formula xml:id="formula_24">)</formula><p>We define two recursive terms Φ 1 and Φ 2 that evolve over time, allowing us to generalize our low-level policy across a temporal horizon T .</p><p>Initialization:</p><formula xml:id="formula_25">Φ 1 = B 0 K 0 , Φ 2 = (A 0 +B 0 K 0 )s.</formula><p>Recursive computation for l = 1 to T :</p><formula xml:id="formula_26">Φ 1 = (A l +B l K l )Φ 1 +B l K l , Φ 2 = (A l +B l K l )Φ 2 .</formula><p>Final Solution for u:</p><formula xml:id="formula_27">u = -Φ † 1 (s ′ -Φ 2 ).</formula><p>Regularised analytical inverse. We show that using this analytical inverse formulation recovers the high-level action exactly in a linear state space model in Appendix C.1. However, in the main body, we apply this method to a more challenging, non-linear system using approximate linearized dynamics.</p><p>When solving this inverse problem exactly, we observe large magnitudes in the recovered actions, as the solution attempts to perfectly fit the data under these approximate dynamics, which reduces generalizability and makes learning harder. To address this, we employ an implicit regularization technique by using the analytical gradient in a gradient descent algorithm, iteratively updating the solution with early stopping to prevent overfitting.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.1.2 NUMERICAL INVERSE</head><p>As an alternative to the analytical solution, we can solve the inverse numerically (see Algorithm 2). We use the Adam optimizer with a learning rate of 0.01 and run 10000 steps per data point with early stopping if the difference between the previous and current loss is below 1e 6 . To avoid that solutions from bad local minima impact learning, we only include transitions with a loss &lt; 0.2 in the dataset.</p><p>Further, for all of the datasets we scale the action to be within [-1,1]. In Robosuite, we selected two tasks-Door Opening and Lift -that can be solved using online RL to collect datasets, both using standard environment configurations. We use the recommended lower-level controller, the Operational Space Controller, and set the temporal abstraction between the high-level RL and low-level controller to T = 5.</p><p>For data collection, we trained a standard online SAC <ref type="bibr" target="#b21">(Haarnoja et al., 2018)</ref> algorithm for 1,500 episodes for Door Opening and 2,000 episodes for Lift to convergence. This process yielded datasets containing 750,000 transitions for Door Opening and 1,000,000 transitions for Lift, respectively. Data collection is done under standard controller settings with original stiffness <ref type="bibr">(kp = [150,150,150,150,150,150]</ref>) and damping (kd = [1,1,1,1,1,1]). For the modified controller scenarios, we either change to kp = <ref type="bibr">[150,</ref><ref type="bibr">150,</ref><ref type="bibr">150,</ref><ref type="bibr">50,</ref><ref type="bibr">50,</ref><ref type="bibr">50]</ref> </p><formula xml:id="formula_28">or kd = [3,3,3,1,1,1].</formula><p>For offline training of IQL, we use the parameters indicated in Table <ref type="table" target="#tab_8">7</ref>. For this lower-level controller, we resort to numerical methods. Fortunately, it remains differentiable, allowing us to utilize both gradient-based and gradient-free methods, such as the Cross-Entropy Method (CEM). In general we observe, that gradient-based approaches require fewer controller runs-thus reducing computational time-to converge to a solution. However, depending on the initialization of u, the higher exploration of CEM can help to escape local minima and lead to better results. (see Algorithm 3))</p><p>Consequently, in scenarios where we aim to restore the high-level action for the given controller, we initialize u as a zero vector and run gradient descent. For transitions where gradient descent gets stuck in local minima, indicated by high final loss, we rerun CEM to improve the results.</p><p>In casesExec where we want to modify controller settings compared to the data collection, we can use the original high-level action as the initialization. In this case, gradient-based methods tend to perform well and deliver satisfactory results.</p><p>For the gradient descent algorithm, we use the Adam optimizer with a learning rate of 0.01, running for up to 10,000 steps with early stopping triggered if the loss falls below 1e -5 . For the Cross-Entropy Method (CEM), we generate 50 samples per iteration, retaining the top 20% of them based on performance in each step. Early stopping is applied if the loss does not improve over the course of 4 consecutive steps.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2.2 HIERARCHICAL RL ("HRL")</head><p>For the "HRL" baseline, where both levels are learned, we evaluate two scenarios: (i) the upper level predicts the same reduced goal state as in the case of an operation space controller (position and orientation of end-effectors) (ii) the upper level predicts the goal state directly in the low-level joint space (position and velocity of the robot joints. The lower-level network then outputs the required torques to reach the desired goal state. As the network architecture, we employ a recurrent neural network consisting of two LSTM layers and a fully connected MLP layer, followed by a Tanh activation function. The Tanh output is scaled to match the feasible range for torque control, ensuring the actions remain within valid limits. All hidden dimensions are set to 256, we use a train/val split of 09./01. and train for 100 epochs, where we save the model with the best validation loss.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.3 VEHICLE ROUTING</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.3.1 ENVIRONMENT DETAILS</head><p>In our experiments, we focus on two case studies generated from trip record data, which we provide with our codebase, from the cities of New York, USA (NYC Taxi &amp; Limousine Commission, 2013), and Shenzhen, China <ref type="bibr" target="#b52">(Zhang et al., 2015)</ref>. We are looking at a taxi-like system serving commute demand in the areas of Brooklyn and Shenzhen, respectively. In each scenario, the road network is segmented into geographical areas, representing stations. The trip record data are converted to demand, travel times, and trip prices between stations. As in <ref type="bibr" target="#b17">(Gammelli et al., 2022)</ref>, the arrival of passengers is assumed to be a time-dependent Poisson process, where the Poisson rate is aggregated from the trip record data every 3 minutes.</p><p>An on-demand service provider coordinates M single-occupancy autonomous vehicles on a transportation network represented by a complete graph G = (V,E) where V = {v i } {i=1:Nv} and E = {e j } {j=1:N e} represent the set of vertices and edges of G. Specifically, V defines the set of stations (e.g., pick-up or drop-off locations), and E defines the shortest paths between stations. The time horizon is discretized into a set of time steps I = 1,2,...,T of length T . At any time step t, vehicles are controlled to travel along the shortest path between station i and j ̸ = i ∈ V with a travel time of τ t i,j ∈ Z + and travel cost c ij , as a function of travel time. At each time step t, passengers submit trip requests for a desired origin-destination pair (i,j) ∈ V ×V, which is characterized by demand d t i,j and price p t i,j . The operator matches passengers to vehicles, and the vehicles will transport the passengers to their destinations. For idle vehicles that are not matched with any passengers, the operator controls them to stay at the same station or rebalance to other stations. We denote f t ij,P ∈ N,f t ij,P ≤ d t i,j as the passenger flow, i.e., the number of passengers traveling from station i to station j at time t and f t ij,R ∈ N as the rebalancing flow, i.e., the number of vehicles rebalancing from station i to station j at time t.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.3.2 MDP DETAILS</head><p>Reward (r(s t ,a t )): we choose the reward to be the operator's profit, which we define as the difference between the revenue from serving passengers and the cost of operations:</p><formula xml:id="formula_29">r(s t ,a t ) = (i,j)∈E f t+1 ij,P (p t+1 ij -c t+1 ij )- (i,j)∈E f t ij,R c t ij .</formula><p>State space (S): the state space describes the current status of the transportation network via node features. Specifically, given a planning horizon K, we consider: (1) the current and projected availability of idle vehicles in each station</p><formula xml:id="formula_30">m t i ∈ [0,M ],∀i ∈ V and {m t ′ i,j } t ′ =t,...,t+K ,<label>(2) provider</label></formula><p>-level information trip price p t i,j and cost c t i,j , (3) current d t ij and estimated { dt ′ i,j } t ′ =t,...,t+K transportation demand between all stations.</p><p>High-level action u: Given the number of idle vehicles and their current spatial distribution, we consider the problem of determining the desired idle vehicle distribution qt+1 i .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.3.3 MODEL IMPLEMENTATION</head><p>In what follows, we provide details for the implemented data collection methods and models.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Optimization-and heuristic-based approaches:</head><p>1. Random Dispersion: at each time step, the desired distribution is sampled from a Dirichlet prior with a concentration parameter c = [1,1,...,1]. 2. Informed rebalancing (INF) <ref type="bibr" target="#b49">(Wallar et al., 2018)</ref>: This model assigns idle vehicles V idle to rebalance to regions R that are reachable within a pre-defined time horizon H. By including the forecasted demand rate in each region λj , it maximizes the expected number of requests each vehicle would observe in its assigned rebalancing regions. This formulation is extremely sensitive to the hyperparameters H and ρ. In our experiments, we tune them through an exhaustive grid search (Table <ref type="table" target="#tab_9">8</ref>, Table <ref type="table">9</ref>). Variable y i,j indicates assignment for vehicle i ∈ V idle to rebalance to region center j ∈ R and τ i,j gives the travel time from vehicle i ∈ V idle to region center j ∈ R. min</p><formula xml:id="formula_31">max i∈Vidle j∈R y ij • λj •(H-τ i,j )<label>(27a)</label></formula><formula xml:id="formula_32">s.t. j∈R y ij ≤ 1 ∀i ∈ V idle (27b) y ij • H-τ t i,j ≥ 0 ∀i ∈ V idle ,j ∈ R (27c) i∈Vidle y ij •(H-τ i,j ) ≤ λj •H 2 •ρ ∀j ∈ R<label>(27d</label></formula><formula xml:id="formula_33">Y v∈Vidle r∈R ko τ v,r y v,r<label>(28a)</label></formula><formula xml:id="formula_34">s.t. v∈Vidle R ko y v,r = min(|V idle |,|R ko |) (28b) 0 ≤ y v,r ≤ 1 ∀v,r ∈ Y.<label>(28c)</label></formula><p>4. Proportional Heuristic (PROP): This heuristic distributes excess vehicles according to the forecasted demand λ i . It rebalances proportional to the averaged forecasted demand over the next K = 6 timesteps in region i qi = λi j∈V λj min Learning-based approaches:</p><formula xml:id="formula_35">f ij,R i̸ =j∈V c t ij f ij,R<label>(29a)</label></formula><formula xml:id="formula_36">s.t. j̸ =i (y t ji -f ij,R )+q i ≥ qi , i ∈ V,<label>(29b)</label></formula><formula xml:id="formula_37">j̸ =i f ij,R ≤ q i , i ∈ V.<label>(29c)</label></formula><p>1. End-to-end RL: for the end-to-end RL implementation, the flow action is defined along the edges as opposed to the desired distribution over nodes. We achieve this through minimal changes with respect to the OHIO network architecture. Specifically, this results in an edge convolution (consisting of 2 linear layers of 256 units) that outputs the mean and standard deviation parameters of a Gaussian policy for each edge in the graph. 2. OHIO: for all networks, we use one layer of GCN with 256 hidden units with a sum aggregation function, followed by 2 linear layers of 256 hidden units and a final layer mapping to the respective output's support.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.3.4 OPTIMIZATION POLICY FORMULATION</head><p>Given a desired next state described by the desired number of idle vehicles across stations qt i ,∀i ∈ V, we define the following linear control problem according to <ref type="bibr" target="#b18">Gammelli et al. (2023)</ref> as follows:</p><formula xml:id="formula_38">min f t ij,R (i,j)∈E c t ij f t ij,R<label>(30a) s.t.</label></formula><p>j̸ =i</p><formula xml:id="formula_39">(f t ji,R -f t ij,R )+q t i ≥ qt i , i ∈ V (30b) j̸ =i f t ij,R ≤ q t i , i ∈ V (30c) f t ij,R ≥ 0, (i,j) ∈ E<label>(30d)</label></formula><p>where the objective function (30a) represents the rebalancing cost, constraint (30b) ensures that the resulting number of vehicles is close to the desired number of vehicles, and with constraints (30c), (30d) ensuring that the total rebalancing flow from a region is upper-bounded by the number of idle vehicles in that region and non-negative.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.3.5 ANALYTICAL INVERSE</head><p>We formulate the inverse problem using a data-driven inverse optimization approach <ref type="bibr" target="#b9">Chan C. Y. et al. (2022)</ref>. The general primal optimization problem models a network flow system that minimizes rebalancing costs and penalties for deviations from the desired target distribution (in cases where not all desired distributions are feasible and reachable). The primal problem is formulated as follows:</p><formula xml:id="formula_40">Primal Objective: Minimize c ⊤ x+p ⊤ z s.t.: Ax+Bz ≤ b, x ≥ 0, z ≥ 0.</formula><p>,where in our example, x denotes rebalancing flows, and z is a slack variable penalizing deviations from the target distribution, with respective costs c and p. The constraint matrix A encodes the flow and supply constraints, while B accounts for the deviations from the goal state.</p><p>In the inverse optimization problem, the goal is to reconstruct the unknown desired target distribution by adjusting the right-hand side (b) such that the observed solution (x * ) remains feasible and maximizes the fit of the forward model. This is achieved by minimizing absolute sub-optimality. The absolute sub-optimality problem can be reformulated and efficiently solved using strong <ref type="bibr">duality Chan C. Y. et al. (2022)</ref>.</p><formula xml:id="formula_41">Minimize: ϵ s.t.: Ax * +Bz ≤ b, A ⊤ λ ≤ c, B ⊤ λ ≤ p, λ ≤ 0,ϵ ≥ 0,z ≥ 0,b ∈ R ϵ = c ⊤ x * +p ⊤ z -b ⊤ λ,</formula><p>where specific components of b are fixed to the current vehicle distribution. This ensures that the reconstructed b aligns with the observed flows (x * ) while enforcing feasibility and minimizing the optimality gap under the adjusted model. The desired target distribution can then be inferred from the optimized b. We note, that this inverse model is bilinear, but <ref type="bibr" target="#b8">Chan &amp; Kaw (2020)</ref> show that this problem has an analytical solution. For increased exploration and robustness at the higher level, we could reconstruct different (potentially infeasible) target distributions that lead to the same observed flows. For this, we could add a small regularizer to the objective function, such as r α r b[r], which encourages flexibility in reconstructing the target distribution, which is left as an interesting direction for future work.</p><p>On closer examination, in the current hierarchical formulation with action definitions on a fully connected graph -where all actions are feasible and reachable-, and since all the data collection strategies are central policies and we, therefore, observe optimal x * , i.e. minimal cost flows, the inverse problem simplifies. Specifically, the constraint parameters that satisfy equation (30b) with equality Ax * = b provide one direct solution to the inverse problem. The reconstructed target distribution qt i is then computed as:</p><formula xml:id="formula_42">qt i = q t i + j̸ =i (f t ji,R -f t ij,R ),i ∈ V.</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.4 SUPPLY CHAIN INVENTORY MANAGEMENT</head><p>In what follows, we describe environment specifics, MDP definitions, baseline implementation, and the low-level, optimization formulation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.4.1 ENVIRONMENT DETAILS</head><p>In our scenario, we consider a distribution network in a supply chain consisting of interconnected warehouses and stores aiming to meet customer demand while minimizing storage and transportation costs.</p><p>We define the supply chain as a graph G = {V,E}, where V = V d ∪V W is the set of warehouse V W and distribution V d nodes respectively and E the set of edges connecting warehouses to stores. If a sufficient inventory is available, demand d t i is fulfilled in stores s ∈ V d and sold at a price p. Unsatisfied orders are back ordered at a cost. At each time step t, warehouse i orders additional units of inventory w t i bounded by production capacity C p and stores available ones bounded by storage capacity C s . Simultaneously, each store orders additional inventory from the warehouses bounded by storage capacity c i . Ordered units get delayed by production t P and travel times t i,j respectively. During operations, production m O , transportation m T , storage m S , and backorder costs m B occur. All stores are assumed to have an independent demand-generating process. We simulate seasonal demand behavior by representing demand d i ∈ V d as a co-sinusoidal function with a stochastic component defined as follows:</p><formula xml:id="formula_43">d i t = d i max 2 1+cos f * π(2 * r+t) T +U (0,d i var ) ,<label>(31)</label></formula><p>where d i max is the maximum demand value, U (0,d i var ) is a uniformly distributed random variable, T the episode length, f and r controlling the frequency and shift respectively.</p><p>Environment parameters are defined in Tables <ref type="table" target="#tab_10">10</ref> and<ref type="table" target="#tab_11">11</ref>.  <ref type="bibr">[5,</ref><ref type="bibr">5,</ref><ref type="bibr">5,</ref><ref type="bibr">5,</ref><ref type="bibr">10,</ref><ref type="bibr">10,</ref><ref type="bibr">10,</ref><ref type="bibr">18,</ref><ref type="bibr">18,</ref><ref type="bibr">18</ref>  <ref type="bibr">[80,</ref><ref type="bibr">15,</ref><ref type="bibr">15,</ref><ref type="bibr">15,</ref><ref type="bibr">15,</ref><ref type="bibr">15,</ref><ref type="bibr">15,</ref><ref type="bibr">15,</ref><ref type="bibr">15]</ref> T Episode length 30</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.4.2 MDP DETAILS</head><p>Reward (r(s t ,a t )): we select the reward function in the MDP as the profit of the inventory manager, computed as the difference between sales revenues and the sum of storage, production, transportation, penalties for capacity violations, and backorder cost:</p><formula xml:id="formula_44">r(s t ,a t ) = i∈V W p•min(d i t ,q t i )- i∈V m S i •q t i - i∈V W m O i •w t i - (i,j)∈E m T ij •f t ij - i∈V d 1.5 * p•max(0,q t i -c s )- i∈V d m B i •max(0,d t i -q t i ),<label>(32)</label></formula><p>where q t i is the inventory level at node i at time t, w t i the production order at warehouse i ∈ V W at time t and f t ij the shipment flow from warehouse i ∈ V d to store j at time t. State Space (S): the state describes the current state of the supply chain network by defining node and edge features. Node features contain (i) current and back-ordered demand, (ii) current inventory, (iii) storage and production cost, sales price, and storage and production capacities, (iv) incoming flow or orders for the next T timesteps j∈V f ji:t+1:T or w i:t+1:T . Edge features are represented by the concatenation of (i) travel time t ij and (ii) transportation cost.</p><p>Output of the RL policy u: we define u by two elements: (i) a goal production in warehouse nodes w i ,∀i ∈ V w and (ii) a goal inventory over nodes qt i , ∀i ∈ V d .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.4.3 MODEL IMPLEMENTATION</head><p>In what follows, we provide additional details for the implemented dataset collection strategies and baselines.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Domain-driven heuristics:</head><p>1. S-type Policy: commonly known as the "order-up-to" policy, operates on the basis of the order-up-to level for the warehouses and stores. Essentially, at every time step the inventory manager places orders in an amount that will bring the total inventory on hand and in transit up to their respective order-up-to levels. In practice, the optimal order-up-to levels for each environment are determined through an exhaustive grid search.</p><p>MPC-based: Within this class of methods, we measure the performance of traditional optimizationbased approaches using an MPC approach.</p><p>1. MPC-Oracle: this benchmark serves the purpose of quantifying the performance of an "oracle" controller. We provide this model with perfect foresight information on future demand and system dynamics. By providing the optimization model with Oracle knowledge of the realization of stochastic elements, we are able to quantify the optimality gap for the presented methods. 2. MPC: We relax the assumption of perfect foresight information in MPC-Oracle and substitute it with a noisy and unbiased estimate of demand.</p><p>Learning-based:</p><p>1. End-to-end RL: this benchmark does not approach the problem via the proposed hierarchical formulation of OHIO, but rather through more traditional end-to-end (E2E) architectures. Specifically, the flow action is defined along the edges as opposed to over the nodes. We achieve this through minimal changes to the architecture by an edge convolution (consisting of 2 linear layers of 32 hidden units) that outputs α and β parameters of a Beta distribution for each edge in the graph. We adopt an individual upper bound for each action respective to the storage capacities/production capacities of the previous stage <ref type="bibr" target="#b47">(Stranieri et al., 2024)</ref>. 2. OHIO: for all networks, we use two layers of message-passing neural network of 256 hidden units with a sum aggregation function, followed by a linear layer mapping to the respective output's support.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.4.4 OPTIMIZATION POLICY FORMULATION</head><p>Given the output of the high-level RL-based policy defined as (i) the desired production ŵt i at warehouse nodes i ∈ V W and (ii) the desired distribution of available inventory over distribution nodes qt i , ∀i ∈ V d , we define the following optimization-based policy <ref type="bibr" target="#b18">Gammelli et al. (2023)</ref>:</p><formula xml:id="formula_45">min f t ij ,w t i ,ϵ t w,i ,ϵ t f,i i∈V W |ϵ t w,i |+ i∈V d |ϵ t f,i | (33a) s.t. j∈N -(i) f t ji = qt+1 i +ϵ t f,i , ∀i ∈ V d (33b) j∈N -(i) f t ji +q t i -d t i ≤ C s,i , ∀i ∈ V d (33c) j∈N + (i) f t ij ≤ q t i , ∀i ∈ V W (33d) q t i +w t i - j∈N + (i) f t ij ≤ C p,i , ∀i ∈ V W (33e) w t i = ŵt i +ϵ t w,i , ∀i ∈ V W (33f) f t ij ≥ 0, (i,j) ∈ E (33g)</formula><p>where w t i is the realised production at node i ∈ V W at time t, f t ij the commodity flows from node i to node j at time t, d t i the demand in node i ∈ V d at time t, q t i the available inventory at each node i ∈ V, and C s,i the storage and C p,i the production at node i ∈ V. The objective function 33a represents the distance metric that penalizes the deviation from the desired next states. Constraint 33b ensures that the total incoming flow in distribution nodes is as close as possible to the desired inventory, constraint 33c ensures that the inventory after demand realization, and incoming shipments do not exceed the storage capacity, constraint 33d guarantees that the combined shipment quantity is upper bounded by the warehouse inventory. Constraint 33e ensures capacity adherence in the warehouse, and constraint 33f ensures that orders from manufacturers are close to the desired orders quantity and, lastly, that commodity flows are defined as non-negative.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.4.5 ANALYTICAL INVERSE</head><p>The flow dynamics in this problem are deterministic, and the cost terms minimize the one-norm of error terms. These error terms measure disagreement between the realized next state under the system dynamics and the goal next state. In the context of inverse optimization, our goal is to infer the values of constraint parameters qt i ∀i ∈ V S (which correspond to high-level action u) that make the observed inventory flows optimal for the original LP. Similar to the vehicle routing scenario, we can achieve this through data-driven inverse optimization <ref type="bibr" target="#b9">Chan C. Y. et al. (2022)</ref>. When assuming that the observed flows do not violate capacity constraints, the direct solution to the inverse problem can be derived as qt+1</p><formula xml:id="formula_46">i = j∈N -(i) f t ji ,∀i ∈ V d .</formula><p>Note, that this way we only generate feasible high-level actions for the offline dataset. The inclusion of error term ϵ t f,i in the inverse formulation to create non-feasible high-level action as means of exploration for the offline RL agent is left as future work.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.5 LEARNING COMPONENTS FOR NETWORK OPTIMIZATION</head><p>In this section, we provide details about the learning component in the network optimization experiments.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.5.1 NETWORK ARCHITECTURES</head><p>We parameterize policy, Q-and value function estimators through graph neural network encoders. The specific network architectures are problem-specific and can be summarized as follows:</p><p>1. Vehicle Routing: to define a valid vehicle distribution, the output of the policy network is sampled from a Dirichlet distribution u t ∼ Dir(u t |c). More precisely, we use a Graph convolutional neural network (GCN) <ref type="bibr" target="#b27">(Kipf &amp; Welling, 2017)</ref> with sum aggregation function, followed by three linear layers that compute the concentration parameters c ∈ R Nv + over N v regions, where the positivity of c is ensured by a Softplus nonlinearity. The Q-and value functions have the same backbone architecture. In the Q-function architecture, the node of a Beta distribution, where the output is scaled by the production capacity to define the desired production. The Q-and value functions share the same encoder architecture. The action is concatenated with the node embeddings before the linear layers to achieve a Q-value estimate, while the node embeddings are aggregated through summation to compute the value function estimate.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.5.2 ONLINE FINE-TUNING</head><p>In this section, we state the specifics of our online fine-tuning procedure.</p><p>With offline RL, we obtain a policy initialization, which is intended for sample-efficient online finetuning. Offline learned policy and value functions via IQL or BC can be fine-tuned directly. However, conservative methods such as CQL tend to learn smaller Q-values than their true values. Consequently, initial interactions during online fine-tuning are spent adjusting the Q-function, leading to unintentional unlearning of the initial policy. To address this, we calibrate the Q-function during offline learning to match the range of the ground-truth Q-values via Cal-CQL, as proposed in <ref type="bibr" target="#b36">Nakamoto et al. (2023)</ref>.</p><p>Further, to mitigate large gradient updates during initial fine-tuning that potentially lead to unstable policy behavior, we (i) freeze the weights of the policy network and only train the Q-and/or value function for the first 200 episodes (ii) we start by sampling 50% of the batch from the offline dataset and gradually decrease this proportion to 0 over 3000 episodes.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.5.3 HYPERPARAMETERS</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>SAC:</head><p>The hyperparameters used to train our online baseline can be found in Table <ref type="table" target="#tab_13">12</ref>. To improve learning stability, we implement (i) a double estimator for the Q-function <ref type="bibr" target="#b22">(Hasselt et al., 2010)</ref> and (ii) target Q-networks <ref type="bibr" target="#b34">(Mnih et al., 2015)</ref>.</p><p>CQL: For our offline experiments, we train the CQL(H) version of CQL with trade-off factor α = 1. We use a policy learning rate of 1 * 10 -4 and a critic learning rate of 3 * 10 -4 . The remaining hyperparameters are kept identical to the online SAC version in Table <ref type="table" target="#tab_13">12</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>IQL:</head><p>We use τ = 0.9 and β = 3 for all implementations and a policy learning rate of 1 * 10 -4 and a critic learning rate of 3 * 10 -4 . General hyperparameters are kept the same as in the online SAC version in Table <ref type="table" target="#tab_13">12</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.3 LEVERAGING DIFFERENT DATA SOURCES FOR ROBOTIC MANIPULATION</head><p>We introduce an "Expert Dataset" comprising 250 episodes collected using an expert policy for the Door Opening task. Using this dataset, we compare:</p><p>• i) Hierarchical imitation learning (HIL). This approach applies an imitation learning objective to both the high-and low-level policies. The high-level policy predicts a goal state in the joint space (position and velocity of the robot joints), whereas the low-level learns the robot torques to reach this goal state. • ii) OHIO-based Imitation Learning ("OHIO-IL"). This method employs an imitation learning objective for the high-level policy, combined with the inverse optimization process derived by an operational space controller for the low-level policy. The high-level policy predicts a goal state in the operational space (position of the robot end effectors).</p><p>As shown in Table <ref type="table" target="#tab_14">13</ref> (left) learning solely from expert demonstrations proves challenging due to limited data coverage, which impacts both HIL and OHIO-based methods and prevents them from consistently solving the task. To address this limitation, we leverage a broader set of demonstrations to enhance offline learning. Specifically, we construct a "Combined Expert Dataset" by merging demonstrations from three distinct expert policies, each collected under a different controller setup (200 episodes per policy, totaling 600 episodes)-a setup commonly encountered in practice. As shown in Table <ref type="table" target="#tab_14">13</ref> (right), OHIO demonstrates its effectiveness in integrating diverse data sources, outperforming non-OHIO-based methods. Furthermore, offline RL objectives enable learning from datasets created by multiple expert policies, consistently outperforming imitation learning approaches (e.g., HIL vs. HRL and OHIO-IL vs. OHIO-IQL).   </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.5 COMPARISON OF RUNTIME AT INFERENCE</head><p>We perform additional analyses on run times for the DVR problem (Table <ref type="table" target="#tab_15">14</ref>). We show how, despite the substantially increased graph sizes, the computation time of our method remains tractable across different real-world scale. We further evaluate the performance of the policy learned by OHIO during online fine-tuning, both in-distribution (i.e., within the same city) and in a transfer learning setting (i.e., requiring adaptation to a different city, with unseen topology, demand patterns, travel times, etc.). Results in Figure <ref type="figure" target="#fig_6">8</ref> show how, in both cases, OHIO policies are able to reliably improve upon the starting performance learned from offline data. Crucially, the policy learned by OHIO is consistently above the performance of the behavior policy during the entire fine-tuning process, thus avoiding prohibitively expensive low-reward interactions during the initial phases of training and potentially alleviating a critical bottleneck for the deployment of RL within real-world systems. In Figure <ref type="figure" target="#fig_7">9</ref>, we show how the E2E policy is unable to adhere to constraint violations during online fine-tuning.  </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Supply chain fine-tuning performance of OHIO (FT-OHIO) and end-to-end (FT-E2E) policies pre-trained on (a) sub-optimal (i.e., HEUR) and (b) biased data (i.e., MPC with biased forecast).</figDesc><graphic coords="10,113.93,86.25,190.08,70.60" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: A diagram showing our inference procedure. Left: the observed-action case. Right: the case in which low-level actions are not observed.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>) 3 .</head><label>3</label><figDesc>Dynamic trip-vehicle assignment (DTV)<ref type="bibr" target="#b2">(Alonso-Mora et al., 2017)</ref>: This model assigns vehicles to unassigned requests by minimizing travel time and either assigning all idle vehicles (V idle ) or all open requests (R ko ). y v,r indicates assignment of vehicle v ∈ V idle to request r ∈ R ko , while τ v,r gives the shortest travel time for vehicle v ∈ V idle to pickup up request r ∈ R ko .</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head></head><label></label><figDesc>57.73 ±39.2 26.44 ±37.9 29.89 ±34.8 64.75 ±37.7 81.85 ±33.1 91.1 ±23.2 C.4 COMPARISON OF SAMPLE-EFFICIENCY DURING ONLINE TRAINING We provide the training curves in Figure 7 to demonstrate the significant improvement in sample-efficiency and learning stability of hierarchical RL over traditional E2E RL.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: Training curve for online hierarchical (Bi-level) RL and E2E RL in the supply chain 1W10S experiment.</figDesc><graphic coords="30,207.98,508.69,194.05,100.19" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 8 :</head><label>8</label><figDesc>Figure 8: Vehicle routing fine-tuning performance (y-axis) of pre-trained hierarchical policies (FT-OHIO) compared with training from scratch (Online-BL) as a function of gradient steps deriving from online interaction (x-axis) with either (a) a same-city scenario (NYC → NYC) or (b) in a transfer learning setting (NYC → SHZ). "Beh. Pol." indicates the performance of the behavior policy.</figDesc><graphic coords="31,109.97,510.83,194.03,72.07" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 9 :</head><label>9</label><figDesc>Figure 9: Supply chain fine-tuning performance (a) and constraint violation (b) of OHIO (FT-OHIO) and end-to-end (FT-E2E) policies pre-trained on near-optimal data (i.e., MPC).</figDesc><graphic coords="31,306.00,512.04,194.04,70.86" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0"><head></head><label></label><figDesc></figDesc><graphic coords="2,136.70,81.86,336.60,171.25" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0"><head></head><label></label><figDesc></figDesc><graphic coords="29,146.60,199.12,316.80,198.00" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head></head><label></label><figDesc>Algorithm 1 OHIO: Offline Hierarchical Reinforcement Learning via Inverse Optimization Require: State transition dataset D; Optionally: approximate dynamics P , reward function r.</figDesc><table><row><cell>D ← {}</cell><cell>▷ Initialize high-level dataset</cell></row><row><cell>for τ ∈ D do</cell><cell></cell></row><row><cell>Compute τ via (6)</cell><cell>▷ Low-level policy inversion</cell></row><row><cell cols="2">D ← D∪{τ } ▷ If reward information is available, include in τ , otherwise compute rt = r(s t ,â t )</cell></row><row><cell>end for Solve offline RL problem using D to yield high-level policy π u</cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 1 :</head><label>1</label><figDesc>Normalized score on the reacher task comparing BC performance within End-to-End, "Observed State" and OHIO formulations, including the choice of algorithm for the inverse problem</figDesc><table><row><cell></cell><cell></cell><cell>OHIO</cell><cell></cell><cell>OBSERVED</cell><cell></cell></row><row><cell>DATASET</cell><cell cols="3">NUMERICAL ANALYTICAL REG. ANALYTICAL</cell><cell>STATE</cell><cell>END-TO-END</cell></row><row><cell>HR DATASET</cell><cell>97.1±10.2</cell><cell>98.2± 3.2</cell><cell>97.1±10.2</cell><cell>0.05±0.0</cell><cell>95.4±14.2</cell></row><row><cell>E2E DATASET</cell><cell>99.2±15.0</cell><cell>94.8±22.0</cell><cell>95.4±23.4</cell><cell>0.04±0.0</cell><cell>99.3±16.0</cell></row><row><cell cols="2">E2E-10C DATASET 95.3±24.5</cell><cell>91.8±27.1</cell><cell>94.6±25.3</cell><cell>-</cell><cell>-</cell></row><row><cell cols="2">E2E-10S DATASET 98.4±17.8</cell><cell>93.5±23.5</cell><cell>93.3±26.9</cell><cell>-</cell><cell>-</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 2 :</head><label>2</label><figDesc>Normalized score comparing offline RL (IQL) to OHIO on robotic manipulation scenarios.</figDesc><table><row><cell></cell><cell></cell><cell>LIFT</cell><cell></cell><cell>DOOR</cell></row><row><cell></cell><cell>DATASET</cell><cell>IQL</cell><cell>OHIO</cell><cell>IQL</cell><cell>OHIO</cell></row><row><cell cols="6">ORIGINAL CONTROLLER 88.5±20.7 89.6±19.4 91.4±16.8 94.1±14.1</cell></row><row><cell cols="2">MODIFIED STIFFNESS</cell><cell cols="4">86.8±16.4 98.9± 4.4 18.6±14.3 92.7±15.8</cell></row><row><cell></cell><cell>MODIFIED DAMPING</cell><cell cols="2">24.1±11.1 75.8±30.5</cell><cell cols="2">2.9± 2.2 76.7±28.2</cell></row><row><cell cols="6">Table 3: Normalized score comparing OHIO to offline hierarchical RL (HRL) with high-level goal in</cell></row><row><cell cols="6">either (i) directly on the joint space, or (ii) same representation used by OHIO on robotic manipulation</cell></row><row><cell>scenarios.</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>TASK</cell><cell>OHIO</cell><cell cols="4">OBSERVED STATE HRL -JOINT SPACE HRL -REDUCED GOAL</cell></row><row><cell>LIFT</cell><cell>89.6±19.4</cell><cell>0.1±0.0</cell><cell cols="2">77.4±25.4</cell><cell>0.02±0.0</cell></row><row><cell>DOOR</cell><cell>94.1±14.1</cell><cell>0.4±0.1</cell><cell cols="2">84.3±25.8</cell><cell>0.07±0.1</cell></row><row><cell cols="2">DOOR -RED. DATA 88.2±25.4</cell><cell>-</cell><cell cols="2">72.7±34.8</cell><cell>-</cell></row></table><note><p>Table 2 highlight a fundamental advantage of OHIO over standard offline RL implementations (IQL). Traditional offline</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 4 :</head><label>4</label><figDesc>Normalized score comparing online (SAC) and offline (BC, IQL, CQL) algorithms within both End-to-End and OHIO formulations on the dynamic vehicle routing scenario.</figDesc><table><row><cell></cell><cell></cell><cell></cell><cell cols="2">END-TO-END</cell><cell></cell><cell></cell><cell>OHIO</cell><cell></cell><cell></cell></row><row><cell>DATASET</cell><cell>BEH. POL.</cell><cell>SAC</cell><cell>BC</cell><cell>IQL</cell><cell>CQL</cell><cell>SAC</cell><cell>BC</cell><cell>IQL</cell><cell>CQL</cell></row><row><cell>NYC-INF</cell><cell>98.5 ±1.7</cell><cell cols="8">-35.2 ±8.3 88.7 ±1.5 48.2 ±1.3 48.1 ±1.5 98.0 ±1.9 97.6 ±2.3 98.1 ±2.8 93.0 ±1.7</cell></row><row><cell>NYC-DTV</cell><cell>89.4 ±2.1</cell><cell cols="8">-35.2 ±8.3 67.0 ±1.6 48.9 ±1.5 69.2 ±2.3 98.0 ±1.9 89.2 ±2.3 91.1 ±2.8 83.5 ±2.3</cell></row><row><cell>NYC-PROP</cell><cell>85.7 ±1.5</cell><cell cols="8">-35.2 ±8.3 83.1 ±1.7 42.2 ±1.6 68.3 ±1.8 98.0 ±1.9 85.7 ±2.5 85.8 ±2.2 88.0 ±2.4</cell></row><row><cell>NYC-DISP</cell><cell>45.8 ±0.7</cell><cell cols="8">-35.2 ±8.3 44.1 ±2.7 57.4 ±2.1 32.5 ±2.9 98.0 ±1.9 86.5 ±1.6 82.8 ±2.2 94.1 ±1.7</cell></row><row><cell>SHZ-INF</cell><cell>90.9 ±0.7</cell><cell>-7.7 ±3.3</cell><cell cols="7">90.1 ±1.5 90.4 ±1.4 42.2 ±1.4 95.5 ±1.0 87.0 ±1.0 90.4 ±1.4 88.8 ±1.6</cell></row><row><cell>SHZ-DTV</cell><cell>92.8 ±1.3</cell><cell>-7.7 ±3.3</cell><cell cols="7">89.7 ±1.4 84.9 ±1.4 60.5 ±2.0 95.5 ±1.0 92.5 ±1.3 90.7 ±1.7 90.8 ±1.2</cell></row><row><cell>SHZ-PROP</cell><cell>84.5 ±1.0</cell><cell>-7.7 ±3.3</cell><cell cols="3">85.5 ±1.4 86.5 ±1.2 59.8±1.6</cell><cell cols="4">95.5 ±1.0 83.3 ±1.0 83.6 ±1.1 87.4 ±2.3</cell></row><row><cell>SHZ-DISP</cell><cell>73.5 ±2.6</cell><cell>-7.7 ±3.3</cell><cell cols="7">83.2 ±1.4 92.5 ±1.0 89.3 ±1.9 98.0 ±1.0 89.0 ±1.4 92.5 ±1.2 91.8 ±1.3</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 5 :</head><label>5</label><figDesc>Normalized score comparing online (SAC) and offline (BC, IQL, CQL) algorithms within E2E and OHIO formulations on the supply chain management scenario. ↓ refers to transfer performance between two environments (in this case, policies trained on 1W10S-MPC, tested on 1W10S-MPC-CAP).</figDesc><table><row><cell></cell><cell></cell><cell></cell><cell cols="2">END-TO-END</cell><cell></cell><cell></cell><cell>OHIO</cell><cell></cell><cell></cell></row><row><cell>DATASET</cell><cell>BEH. POL.</cell><cell>SAC</cell><cell>BC</cell><cell>IQL</cell><cell>CQL</cell><cell>SAC</cell><cell>BC</cell><cell>IQL</cell><cell>CQL</cell></row><row><cell>1W3S-HEUR</cell><cell cols="2">81.7 ± 1.8 95.9 ± 2.4</cell><cell>80.3 ± 1.5</cell><cell>80.8 ± 1.7</cell><cell>-203.6 ± 5.9</cell><cell cols="4">96.1 ± 2.0 79.4 ± 1.6 81.5 ± 1.5 79.0 ± 1.9</cell></row><row><cell>1W3S-MPC</cell><cell cols="2">98.4 ± 1.8 95.9 ± 2.3</cell><cell>97.1 ± 2.4</cell><cell>97.6 ± 1.6</cell><cell>-145.9 ± 2.6</cell><cell cols="4">96.1 ± 2.0 95.4 ± 2.0 96.0 ± 1.6 78.2 ± 1.9</cell></row><row><cell>1W10S-HEUR</cell><cell cols="3">15.3 ± 3.0 87.5 ± 1.7 -199.1 ± 146.7</cell><cell>4.54 ± 4.8</cell><cell>-1220.3 ± 4.8</cell><cell cols="4">90.7 ± 1.1 10.9 ± 2.8 11.2 ± 4.1 13.4 ± 2.8</cell></row><row><cell>1W10S-MPC</cell><cell cols="2">96.1 ± 1.4 87.5 ± 1.7</cell><cell>94.8 ± 1.0</cell><cell>95.1 ± 1.4</cell><cell cols="4">-1677.8 ± 257.1 90.7 ± 1.1 91.8 ± 1.7 91.8 ± 1.8</cell><cell>6.0 ± 3.3</cell></row><row><cell></cell><cell></cell><cell></cell><cell>↓</cell><cell>↓</cell><cell>↓</cell><cell></cell><cell>↓</cell><cell>↓</cell><cell>↓</cell></row><row><cell cols="2">1W10S-MPC-CAP 95.8 ± 1.3</cell><cell></cell><cell>39.9 ± 33.3</cell><cell>45.8 ± 13.6</cell><cell>-2110 ± 2.5</cell><cell></cell><cell cols="3">86.7 ± 0.9 89.9 ± 1.4 32.2 ± 1.8</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 5</head><label>5</label><figDesc></figDesc><table /><note><p><p><p>reveal that E2E policies are extremely brittle, even when subjected to minimal variations in the scenario. Specifically, we evaluate both OHIO and E2E policies (trained on 1W10S-MPC data) in a minimally modified version of the same environment (i.e., 1W10S-MPC-CAP), where all state elements remain unchanged except for a reduction of storage capacity at store facilities from 15 to 10. Results in Table</p>5</p>illustrate the advantages of OHIO, with E2E policies experiencing a performance drop of at least 50%, whereas OHIO's performance only deteriorates by up to 5%.</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_7"><head>Table 6 :</head><label>6</label><figDesc>Hyperparameters of SAC.</figDesc><table><row><cell>Parameter</cell><cell>Value</cell></row><row><cell>Optimizer</cell><cell>Adam</cell></row><row><cell>Learning rate</cell><cell>1 * 10 -3</cell></row><row><cell>Discount (γ)</cell><cell>0.97</cell></row><row><cell>Batch size</cell><cell>100</cell></row><row><cell>Entropy coefficient</cell><cell>0.3</cell></row><row><cell>Target smoothing coefficient (τ )</cell><cell>0.005</cell></row><row><cell>Target update interval</cell><cell>1</cell></row><row><cell>Gradient step/env.interaction</cell><cell>1</cell></row><row><cell>B.2 ROBOTIC MANIPULATION</cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_8"><head>Table 7 :</head><label>7</label><figDesc>Hyperparameters of IQL.</figDesc><table><row><cell>Parameter</cell><cell>Value</cell></row><row><cell>Optimizer</cell><cell>Adam</cell></row><row><cell>Learning rate</cell><cell>1 * 10 -3</cell></row><row><cell>Discount (γ)</cell><cell>0.97</cell></row><row><cell>Batch size</cell><cell>256</cell></row><row><cell>Target smoothing coefficient (τ )</cell><cell>0.005</cell></row><row><cell>Target update interval</cell><cell>1</cell></row><row><cell>Gradient step/env.interaction</cell><cell>1</cell></row><row><cell>Temperature</cell><cell>3 (Lift), 1 (Door)</cell></row><row><cell>Quantile</cell><cell>0.7 (Lift), 0.9 (Door)</cell></row><row><cell>B.2.1 NUMERICAL INVERSE</cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_9"><head>Table 8 :</head><label>8</label><figDesc>Hyperparameter tuning of SHZ-INF.</figDesc><table><row><cell cols="2">H ρ</cell><cell>1</cell><cell>2</cell><cell>3</cell><cell>4</cell><cell>5</cell><cell>6</cell></row><row><cell>2</cell><cell cols="2">60.1</cell><cell>60.2</cell><cell>60.1</cell><cell>60.1</cell><cell>60.1</cell><cell>60.0</cell></row><row><cell>3</cell><cell cols="2">60.9</cell><cell>59.6</cell><cell>59.6</cell><cell>59.8</cell><cell>60.0</cell><cell>60.1</cell></row><row><cell>4</cell><cell cols="7">52.97 50.65 51.50 51.79 52.00 60.10</cell></row><row><cell>5</cell><cell cols="7">50.83 44.62 44.19 44.19 44.19 52.10</cell></row><row><cell>6</cell><cell cols="7">48.61 43.13 43.44 43.44 43.44 44.19</cell></row><row><cell></cell><cell cols="6">Table 9: Hyperparameter tuning of NYC-INF.</cell><cell></cell></row><row><cell>H ρ</cell><cell>1</cell><cell></cell><cell>2</cell><cell>3</cell><cell>4</cell><cell>5</cell><cell>6</cell><cell>7</cell></row><row><cell>2</cell><cell cols="8">27.25 27.20 27.18 27.09 26.95 26.89 26.89</cell></row><row><cell>3</cell><cell cols="8">39.70 38.30 39.17 39.30 29.30 39.30 39.30</cell></row><row><cell>4</cell><cell cols="8">49.50 50.08 50.54 50.55 50.55 50.55 50.55</cell></row><row><cell>5</cell><cell cols="8">52.88 54.21 54.23 54.23 54.23 54.23 54.20</cell></row><row><cell>6</cell><cell cols="8">56.22 57.24 57.25 57.25 57.25 57.25 57.25</cell></row><row><cell>7</cell><cell cols="8">56.68 56.04 56.04 56.22 56.22 56.22 56.20</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_10"><head>Table 10 :</head><label>10</label><figDesc>Parameters for the 1F10S environment.</figDesc><table><row><cell>Parameter</cell><cell>Explanation</cell><cell>Value</cell><cell>Parameter</cell><cell>Explanation</cell><cell>Value</cell></row><row><cell>d max</cell><cell>Maximum demand</cell><cell>[5, 15, 20]</cell><cell>m S</cell><cell>Storage cost</cell><cell>[0.1, 0.5, 0.5, 0.5]</cell></row><row><cell>d var</cell><cell>Demand variance</cell><cell>[2, 2, 2]</cell><cell>m O</cell><cell>Production cost</cell><cell>5</cell></row><row><cell>f</cell><cell>Demand frequency</cell><cell>[2, 4, 6]</cell><cell>cp</cell><cell>Production capacity</cell><cell>25</cell></row><row><cell>r</cell><cell>Demand shift</cell><cell>[1, 3, 6]</cell><cell>m T</cell><cell>Transportation cost</cell><cell>0.5</cell></row><row><cell>tij</cell><cell>Travel time</cell><cell>[1, 1, 1]</cell><cell>p</cell><cell>Price</cell><cell>15</cell></row><row><cell>t P</cell><cell>Production time</cell><cell>1</cell><cell>m B</cell><cell>Backorder cost</cell><cell>1.5</cell></row><row><cell>c</cell><cell>Storage capacity</cell><cell>[50, 15, 15, 15]</cell><cell>T</cell><cell>Episode length</cell><cell>30</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_11"><head>Table 11 :</head><label>11</label><figDesc>Parameters for the 1F10S environment.</figDesc><table><row><cell>Param.</cell><cell>Explanation</cell><cell>Value</cell><cell>Param.</cell><cell>Explanation</cell><cell>Value</cell></row><row><cell>d max</cell><cell>Maximum demand</cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_13"><head>Table 12 :</head><label>12</label><figDesc>Hyperparameters of SAC. with the action before being fed into the linear layers. The value function maps from node embeddings to the final value estimate through a sum aggregation. 2. Supply Chain Inventory Management: we use a message-passing neural network (MPNN)<ref type="bibr" target="#b19">(Gilmer et al., 2017)</ref> with sum aggregation. The output of the policy network is defined as (i) concentration parameters c ∈ R V + of a Dirichlet distribution over warehouses and stores for computing the shipment flows, and (ii) α ∈ R</figDesc><table><row><cell>Parameter</cell><cell>Value</cell></row><row><cell>Optimizer</cell><cell>Adam</cell></row><row><cell>Learning rate</cell><cell cols="2">1 * 10 -3</cell></row><row><cell>Discount (γ)</cell><cell>0.97</cell></row><row><cell>Batch size</cell><cell>100</cell></row><row><cell>Entropy coefficient</cell><cell>0.3</cell></row><row><cell>Target smoothing coefficient (τ )</cell><cell>0.005</cell></row><row><cell>Target update interval</cell><cell>1</cell></row><row><cell>Gradient step/env.interaction</cell><cell>1</cell></row><row><cell cols="2">embeddings are concatenated |V W | +</cell><cell>|V W | and β ∈ R +</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_14"><head>Table 13 :</head><label>13</label><figDesc>Normalized scores on the door opening task</figDesc><table><row><cell cols="2">Expert Dataset</cell><cell></cell><cell cols="2">Combined Expert Dataset</cell><cell></cell></row><row><cell>HIL</cell><cell>OHIO -IL</cell><cell>HIL</cell><cell>HRL</cell><cell>OHIO -IL</cell><cell>OHIO -IQL</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_15"><head>Table 14 :</head><label>14</label><figDesc>Runtimes of OHIO at inference on the Dynamic Vehicle Routing environment on different graph sizes. Oracle (T=12) 1.69 s (± 0.28) 45.21 s (± 3.5) 85.23 s (± 7.92) 163.06 s (± 11.29) C.6 ONLINE FINE-TUNING OF OHIO POLICY IN NETWORK OPTIMIZATION SCENARIOS</figDesc><table><row><cell>No. Edges</cell><cell>16,000</cell><cell>10,000</cell><cell>40,000</cell><cell>90,000</cell></row><row><cell>E2E</cell><cell cols="3">0.02 s (± 0.04) 0.04 s (± 0.00) 0.16 s (± 0.01)</cell><cell>0.32 s (± 0.01)</cell></row><row><cell>OHIO</cell><cell cols="3">0.09 s (± 0.01) 0.73 s (± 0.01) 5.61 s (± 0.04)</cell><cell>14.90 s (± 0.25)</cell></row><row><cell>MPC-Oracle (T=6)</cell><cell cols="3">0.47 s (± 0.02) 3.93 s (± 0.38) 21.97 s (± 2.58)</cell><cell>44.13 s (± 2.76)</cell></row><row><cell>MPC-</cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>As has been noted by<ref type="bibr" target="#b18">Gammelli et al. (2023)</ref>, this term may be learned alongside the RL policy.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>We include the detailed derivation in Appendix A.3</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="6" xml:id="foot_2"><p>DISCUSSION AND CONCLUSIONSRL within large-scale, complex real-world systems has so far been limited by issues such as lack of robustness, sensitivity to distribution shifts, and expensive training processes. Hierarchical policy structures and offline RL are both promising strategies to tackle these issues, yet their integration remains an open challenge. To overcome the difficulties of combining offline RL with hierarchical policies, we propose an approach that leverages the structure of low-level policies along with approximate knowledge of the system dynamics and reward function. This approach formulates an inverse problem that transforms low-level state (and possibly action) information into datasets suitable for standard offline RL tools. OHIO not only successfully recovers hierarchical policies from datasets generated by arbitrary, i.e. flat behavior policies, but it also effectively utilizes datasets collected under varying or unknown low-level controller configurations-a common challenge in practice that often hinders the efficient use of available data (e.g., data collected across multiple robotic embodiments). Our approach demonstrates strong performance across all problem settings we evaluate, substantially outperforming end-to-end RL and other hierarchical approaches in terms of both performance and, crucially, robustness. While standard offline RL struggles to avoid constraint violations that are not present in the dataset, OHIO addresses this by directly encoding domain-specific constraints. As a result, OHIO inherently avoids infeasible out-of-distribution states, facilitating more robust deployment and safer online fine-tuning.While our approach demonstrates considerable strengths, it also has certain limitations. Since OHIO integrates elements of both model-based and model-free reinforcement learning, its performance is sensitive to the accuracy of the dynamics approximation. Although we have not explored the robustness of our framework against model errors in this study, this represents a highly promising avenue for future research. Moreover, solving the inverse problem can be computationally intensive, even though this process is conducted entirely offline. In our current implementation, we simplified action reconstruction by neglecting temporal information for computational feasibility; however, more sophisticated estimation methods, such as cross-timestep losses, present a compelling direction for future exploration. More generally, we believe this research opens several promising directions for the extension of these concepts to a wider range of large-scale, real-world applications.</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Algorithmic Details 16</head><p>A   We provide a visualization of the policies obtained by standard offline RL in Figure <ref type="figure">6a</ref>), which fails to perform the task of opening the door, and OHIO Figure <ref type="figure">6b</ref>) performing effective offline RL and completing the task. </p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Differentiable convex optimization layers</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Agrawal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Amos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Barratt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Boyd</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Diamond</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">Z</forename><surname>Kolter</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conf. on Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Opal: Offline primitive discovery for accelerating offline reinforcement learning</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ajay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Agrawal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Nachum</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Int. Conf. on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">On-demand high-capacity ride-sharing via dynamic trip-vehicle assignment</title>
+		<author>
+			<persName><forename type="first">Javier</forename><surname>Alonso-Mora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samitha</forename><surname>Samaranayake</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Wallar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emilio</forename><surname>Frazzoli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniela</forename><surname>Rus</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Proceedings of the National Academy of Sciences</title>
+		<imprint>
+			<biblScope unit="volume">114</biblScope>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Differentiable MPC for end-to-end planning and control</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Amos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><forename type="middle">D J</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Sacks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Boots</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">Z</forename><surname>Kolter</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conf. on Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Combining optimal control and learning for visual navigation in novel environments</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Bansal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Tolani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Malik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Tomlin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conf. on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Recent advances in hierarchical reinforcement learning. Discrete event dynamic systems</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Andrew</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sridhar</forename><surname>Barto</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mahadevan</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2003">2003</date>
+			<biblScope unit="volume">13</biblScope>
+			<biblScope unit="page" from="341" to="379" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">DNS-based predictive control of turbulence: an optimal benchmark for feedback algorithms</title>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">R</forename><surname>Bewley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Moin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Temam</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Fluid Mechanics</title>
+		<imprint>
+			<biblScope unit="volume">447</biblScope>
+			<biblScope unit="page" from="179" to="225" />
+			<date type="published" when="2001">2001</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<monogr>
+		<title level="m" type="main">State-only imitation learning by trajectory distribution matching</title>
+		<author>
+			<persName><forename type="first">Damian</forename><surname>Boborzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christoph-Nikolas</forename><surname>Straehle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jens</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefan</forename><surname>Buchner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lars</forename><surname>Mikelsons</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Inverse optimization for the recovery of constraint parameters</title>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">Y</forename><surname>Timothy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Neal</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Kaw</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.ejor.2019.09.027</idno>
+		<ptr target="https://doi.org/10.1016/j.ejor.2019.09.027" />
+	</analytic>
+	<monogr>
+		<title level="j">European Journal of Operational Research</title>
+		<idno type="ISSN">0377-2217</idno>
+		<imprint>
+			<biblScope unit="volume">282</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="415" to="427" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Inverse optimization: Theory and applications</title>
+		<author>
+			<persName><forename type="first">Timothy</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">Y</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rafid</forename><surname>Mahmood</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><forename type="middle">Yihang</forename><surname>Zhu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Operations Research</title>
+		<imprint>
+			<biblScope unit="volume">23</biblScope>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Diffusion policy: Visuomotor policy learning via action diffusion</title>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyuan</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenjia</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Cousineau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Burchfiel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuran</forename><surname>Song</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Robotics: Science and Systems</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">A tutorial on the cross-entropy method</title>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">T</forename><surname>De Boer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">P</forename><surname>Kroese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mannor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">Y</forename><surname>Rubinstein</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Annals of Operations Research</title>
+		<imprint>
+			<biblScope unit="volume">134</biblScope>
+			<date type="published" when="2005">2005</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Reinforcement learning with combinatorial actions: An application to vehicle routing</title>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Delarue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ross</forename><surname>Anderson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Tjandraatmadja</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conf. on Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Deep-reinforcement-learning-based autonomous voltage control for power grid operations</title>
+		<author>
+			<persName><forename type="first">Jiajun</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Di</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruisheng</forename><surname>Diao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haifeng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiwei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Desong</forename><surname>Bian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhehan</forename><surname>Yi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Power Systems</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="814" to="817" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Implicit behavioral cloning</title>
+		<author>
+			<persName><forename type="first">Pete</forename><surname>Florence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Corey</forename><surname>Lynch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oscar</forename><forename type="middle">A</forename><surname>Ramirez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ayzaan</forename><surname>Wahid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laura</forename><surname>Downs</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adrian</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johnny</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Mordatch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Tompson</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conf. on Robot Learning</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="158" to="168" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Learning to operate a fleet of cars</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Fluri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Ruch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zilly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hakenberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Frazzoli</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. IEEE Int. Conf. on Intelligent Transportation Systems</title>
+		<meeting>IEEE Int. Conf. on Intelligent Transportation Systems</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Graph neural network reinforcement learning for autonomous mobility-on-demand systems</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Gammelli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Harrison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Rodrigues</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><forename type="middle">C</forename><surname>Pereira</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Pavone</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. IEEE Conf. on Decision and Control</title>
+		<meeting>IEEE Conf. on Decision and Control</meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Graph meta-reinforcement learning for transferable autonomous mobility-on-demand</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Gammelli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Harrison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Rodrigues</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Pereira</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Pavone</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACM Int. Conf. on Knowledge Discovery and Data Mining</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Graph reinforcement learning for network control via bi-level optimization</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Gammelli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Harrison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Pavone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Rodrigues</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pereira</forename><forename type="middle">C</forename><surname>Francisco</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Int. Conf. on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Neural message passing for quantum chemistry</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gilmer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Schoenholz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Riley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Vinyals</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Dahl</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Int. Conf. on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Relay policy learning: Solving long-horizon tasks via imitation and reinforcement learning</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lynch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hausman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conf. on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Soft actor-critic: Off-policy maximum entropy deep reinforcement learning with a stochastic actor</title>
+		<author>
+			<persName><forename type="first">Tuomas</forename><surname>Haarnoja</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aurick</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 35th International Conference on Machine Learning</title>
+		<editor>
+			<persName><forename type="first">Jennifer</forename><surname>Dy</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Andreas</forename><surname>Krause</surname></persName>
+		</editor>
+		<meeting>the 35th International Conference on Machine Learning</meeting>
+		<imprint>
+			<date type="published" when="2018-07">Jul 2018</date>
+			<biblScope unit="volume">80</biblScope>
+			<biblScope unit="page" from="10" to="15" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Double q-learning</title>
+		<author>
+			<persName><forename type="first">Hado</forename><surname>Hasselt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Guez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Silver</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conf. on Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Trajectory optimization with optimization-based dynamics</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Taylor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Simon</forename><surname>Howell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sumeet</forename><surname>Le Cleac'h</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pete</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zachary</forename><surname>Florence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vikas</forename><surname>Manchester</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sindhwani</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Robotics and Automation Letters</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="6750" to="6757" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Learning sampling distributions for robot motion planning</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Harrison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Pavone</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. IEEE Conf. on Robotics and Automation</title>
+		<meeting>IEEE Conf. on Robotics and Automation<address><addrLine>Brisbane, Australia</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2018-05">May 2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<analytic>
+		<title level="a" type="main">A unified approach for motion and force control of robot manipulators: The operational space formulation</title>
+		<author>
+			<persName><forename type="first">Oussama</forename><surname>Khatib</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Journal on Robotics and Automation</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="43" to="53" />
+			<date type="published" when="1987">1987</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Lobsdice: Offline learning from observation via stationary distribution correction estimation</title>
+		<author>
+			<persName><forename type="first">Geon-Hyeong</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jongmin</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Youngsoo</forename><surname>Jang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongseok</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kee-Eung</forename><surname>Kim</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Koyejo</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Mohamed</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Agarwal</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">D</forename><surname>Belgrave</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">K</forename><surname>Cho</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Oh</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Curran Associates, Inc</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="8252" to="8264" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Semi-supervised classification with graph convolutional networks</title>
+		<author>
+			<persName><forename type="first">T.-N</forename><surname>Kipf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Welling</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Int. Conf. on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Offline reinforcement learning with implicit q-learning</title>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Kostrikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashvin</forename><surname>Nair</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<idno>CoRR, abs/2110.06169</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Conservative q-learning for offline reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Aviral</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aurick</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">George</forename><surname>Tucker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conf. on Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Hierarchical imitation and reinforcement learning</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Dudik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Daumé</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Int. Conf. on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Robotic table wiping via reinforcement learning and whole-body trajectory optimization</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lew</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Prats</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Bingham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Weisz</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. IEEE Conf. on Robotics and Automation</title>
+		<meeting>IEEE Conf. on Robotics and Automation</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jonathan</forename><forename type="middle">J</forename><surname>Timothy P Lillicrap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Hunt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicolas</forename><surname>Pritzel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Heess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuval</forename><surname>Erez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Tassa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daan</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Wierstra</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1509.02971</idno>
+		<title level="m">Continuous control with deep reinforcement learning</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Towards optimally decentralized multi-robot collision avoidance via deep reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Pinxin</forename><surname>Long</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tingxiang</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>Liao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenxi</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Pan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. IEEE Conf. on Robotics and Automation</title>
+		<meeting>IEEE Conf. on Robotics and Automation</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Human-level control through deep reinforcement learning</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Mnih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Kavukcuoglu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">A</forename><surname>Rusu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nature</title>
+		<imprint>
+			<biblScope unit="volume">518</biblScope>
+			<biblScope unit="issue">7540</biblScope>
+			<biblScope unit="page" from="529" to="533" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Data-efficient hierarchical reinforcement learning</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Nachum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conf. on Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Cal-ql: Calibrated offline rl pre-training for efficient online fine-tuning</title>
+		<author>
+			<persName><forename type="first">Mitsuhiko</forename><surname>Nakamoto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuexiang</forename><surname>Zhai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anikait</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Max</forename><forename type="middle">Sobol</forename><surname>Mark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aviral</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conf. on Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b37">
+	<monogr>
+		<ptr target="s://www1.nyc.gov/site/tlc/about/tlc-trip-record-data.page" />
+		<title level="m">Trip Record Data</title>
+		<imprint>
+			<publisher>NYC Taxi &amp; Limousine Commission</publisher>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Learning to control in operational space</title>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Peters</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefan</forename><surname>Schaal</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Int. Journal of Robotics Research</title>
+		<imprint>
+			<biblScope unit="volume">27</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="197" to="212" />
+			<date type="published" when="2008">2008</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Learning non-markovian decision-making from state-only sequences</title>
+		<author>
+			<persName><forename type="first">Aoyang</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feng</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qing</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Song-Chun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sirui</forename><surname>Xie</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Oh</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">T</forename><surname>Naumann</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Globerson</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">K</forename><surname>Saenko</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><surname>Hardt</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Curran Associates, Inc</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="6596" to="6618" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Deep reinforcement learning for traffic signal control: A review</title>
+		<author>
+			<persName><forename type="first">Faizan</forename><surname>Rasheed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alvin</forename><surname>Kok-Lim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rafidah</forename><surname>Yau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Celimuge</forename><surname>Md Noor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yeh-Ching</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Low</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Access</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="page" from="208016" to="208044" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b41">
+	<monogr>
+		<title level="m" type="main">Model predictive control: Theory and design</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Rawlings</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Mayne</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+			<publisher>Nob Hill Publishing</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b42">
+	<analytic>
+		<title level="a" type="main">A review on reinforcement learning algorithms and applications in supply chain management</title>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Rolf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Jackson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marcel</forename><surname>Müller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Lang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tobias</forename><surname>Reggelin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmitry</forename><surname>Ivanov</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">International Journal of Production Research</title>
+		<imprint>
+			<biblScope unit="volume">61</biblScope>
+			<biblScope unit="issue">20</biblScope>
+			<biblScope unit="page" from="7151" to="7179" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Latent plans for task-agnostic offline reinforcement learning</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Rosete-Beas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Mees</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Kalweit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Boedecker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Burgard</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conf. on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Optimization of computer simulation models with rare events</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">Y</forename><surname>Rubinstein</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">European Journal of Operational Research</title>
+		<imprint>
+			<biblScope unit="volume">99</biblScope>
+			<date type="published" when="1997">1997</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b45">
+	<monogr>
+		<title level="m" type="main">Real-time control of electric autonomous mobility-on-demand systems via graph reinforcement learning</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Singhal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Gammelli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Luke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Gopalakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Helmreich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Pavone</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b46">
+	<analytic>
+		<title level="a" type="main">A modular and transferable reinforcement learning framework for the fleet rebalancing problem</title>
+		<author>
+			<persName><forename type="first">Erotokritos</forename><surname>Skordilis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Tripp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Moniot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Graf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Biagioni</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Intelligent Transportation Systems</title>
+		<imprint>
+			<biblScope unit="volume">23</biblScope>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b47">
+	<analytic>
+		<title level="a" type="main">Combining deep reinforcement learning and multi-stage stochastic programming to address the supply chain inventory management problem</title>
+		<author>
+			<persName><forename type="first">Francesco</forename><surname>Stranieri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edoardo</forename><surname>Fadda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabio</forename><surname>Stella</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">International Journal of Production Economics</title>
+		<imprint>
+			<biblScope unit="volume">268</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b48">
+	<analytic>
+		<title level="a" type="main">dm control: Software and tasks for continuous control</title>
+		<author>
+			<persName><forename type="first">Saran</forename><surname>Tunyasuvunakool</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alistair</forename><surname>Muldal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yotam</forename><surname>Doron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siqi</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Bohez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Merel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Erez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothy</forename><surname>Lillicrap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicolas</forename><surname>Heess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuval</forename><surname>Tassa</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.simpa.2020.100022</idno>
+		<ptr target="https://doi.org/10.1016/j.simpa.2020.100022" />
+	</analytic>
+	<monogr>
+		<title level="j">Software Impacts</title>
+		<idno type="ISSN">2665-9638</idno>
+		<imprint>
+			<biblScope unit="volume">6</biblScope>
+			<biblScope unit="page">100022</biblScope>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b49">
+	<analytic>
+		<title level="a" type="main">Vehicle rebalancing for mobility-on-demand systems with ride-sharing</title>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Wallar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Menno</forename><surname>Van Der</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Javier</forename><surname>Zee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniela</forename><surname>Alonso-Mora</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rus</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE/RSJ Int. Conf. on Intelligent Robots &amp; Systems</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b50">
+	<analytic>
+		<title level="a" type="main">Relmogen: Integrating motion generation in reinforcement learning for mobile manipulation</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Martín-Martín</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Litany</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Toshev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Savarese</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. IEEE Conf. on Robotics and Automation</title>
+		<meeting>IEEE Conf. on Robotics and Automation</meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b51">
+	<analytic>
+		<title level="a" type="main">Analysis and control of autonomous mobility-on-demand systems</title>
+		<author>
+			<persName><forename type="first">Gioele</forename><surname>Zardini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicolas</forename><surname>Lanzetti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marco</forename><surname>Pavone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emilio</forename><surname>Frazzoli</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Robotics, and Autonomous Systems</title>
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="page" from="633" to="658" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note>Annual Review of Control</note>
+</biblStruct>
+
+<biblStruct xml:id="b52">
+	<analytic>
+		<title level="a" type="main">Urbancps: a cyber-physical system based on multi-source big infrastructure data for heterogeneous model integration</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>He</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Int. Conf. on Cyber-Physical Systems</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="238" to="247" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b53">
+	<analytic>
+		<title level="a" type="main">Plas: Latent action space for offline reinforcement learning</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Bajracharya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Held</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conf. on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b54">
+	<analytic>
+		<title level="a" type="main">Dexterous manipulation with deep reinforcement learning: Efficient, general, and low-cost</title>
+		<author>
+			<persName><forename type="first">Henry</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aravind</forename><surname>Rajeswaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vikash</forename><surname>Kumar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. IEEE Conf. on Robotics and Automation</title>
+		<meeting>IEEE Conf. on Robotics and Automation</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b55">
+	<monogr>
+		<title level="m" type="main">robosuite: A modular simulation framework and benchmark for robot learning</title>
+		<author>
+			<persName><forename type="first">Yuke</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Josiah</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ajay</forename><surname>Mandlekar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberto</forename><surname>Martín-Martín</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soroush</forename><surname>Nasiriany</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifeng</forename><surname>Zhu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2009.12293</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b56">
+	<analytic>
+		<title level="a" type="main">Off-policy imitation learning from observations</title>
+		<author>
+			<persName><forename type="first">Zhuangdi</forename><surname>Zhu</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">b. B.1 Goal-directed Control . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">Kaixiang</forename><surname>Lin</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">b. B.1 Goal-directed Control . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Dai</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">b. B.1 Goal-directed Control . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayu</forename><surname>Zhou</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">b. B.1 Goal-directed Control . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .</orgName>
+			</affiliation>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<editor>
+			<persName><forename type="first">H</forename><surname>Larochelle</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><surname>Ranzato</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">R</forename><surname>Hadsell</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><forename type="middle">F</forename><surname>Balcan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">H</forename><surname>Lin</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Curran Associates, Inc</publisher>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page">19</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b57">
+	<monogr>
+		<title/>
+		<author>
+			<orgName type="collaboration">B.1.1 Analytical Inverse . . . . . . . . . . . . . . . . . . . . . . . . . . . .</orgName>
+		</author>
+		<imprint>
+			<biblScope unit="page">19</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b58">
+	<monogr>
+		<title/>
+		<author>
+			<orgName type="collaboration">B.1.2 Numerical Inverse . . . . . . . . . . . . . . . . . . . . . . . . . . . .</orgName>
+		</author>
+		<imprint>
+			<biblScope unit="page">20</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b59">
+	<monogr>
+		<title/>
+		<author>
+			<orgName type="collaboration">B.2 Robotic Manipulation . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 20 B.2.1 Numerical Inverse . . . . . . . . . . . . . . . . . . . . . . . . . . . .</orgName>
+		</author>
+		<imprint>
+			<biblScope unit="page">21</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b60">
+	<monogr>
+		<title/>
+		<author>
+			<orgName type="collaboration">B.2.2 Hierarchical RL (&quot;HRL&quot;) . . . . . . . . . . . . . . . . . . . . . . . . .</orgName>
+		</author>
+		<imprint>
+			<biblScope unit="page">21</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b61">
+	<monogr>
+		<title/>
+		<author>
+			<orgName type="collaboration">B.3 Vehicle Routing . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 21 B.3.1 Environment Details . . . . . . . . . . . . . . . . . . . . . . . . . . .</orgName>
+		</author>
+		<imprint>
+			<biblScope unit="page">21</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b62">
+	<monogr>
+		<title/>
+		<author>
+			<orgName type="collaboration">B.3.2 MDP Details . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .</orgName>
+		</author>
+		<imprint>
+			<biblScope unit="page">22</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b63">
+	<monogr>
+		<title/>
+		<author>
+			<orgName type="collaboration">B.3.3 Model Implementation . . . . . . . . . . . . . . . . . . . . . . . . . .</orgName>
+		</author>
+		<imprint>
+			<biblScope unit="page">22</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b64">
+	<monogr>
+		<title/>
+		<author>
+			<orgName type="collaboration">B.3.4 Optimization Policy Formulation . . . . . . . . . . . . . . . . . . . . .</orgName>
+		</author>
+		<imprint>
+			<biblScope unit="page">24</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b65">
+	<monogr>
+		<title/>
+		<author>
+			<orgName type="collaboration">B.3.5 Analytical Inverse . . . . . . . . . . . . . . . . . . . . . . . . . . . .</orgName>
+		</author>
+		<imprint>
+			<biblScope unit="page">24</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b66">
+	<monogr>
+		<title/>
+		<author>
+			<orgName type="collaboration">B.4 Supply Chain Inventory Management . . . . . . . . . . . . . . . . . . . . . . . . . 25 B.4.1 Environment Details . . . . . . . . . . . . . . . . . . . . . . . . . . .</orgName>
+		</author>
+		<imprint>
+			<biblScope unit="page">25</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b67">
+	<monogr>
+		<title/>
+		<author>
+			<orgName type="collaboration">B.4.2 MDP Details . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .</orgName>
+		</author>
+		<imprint>
+			<biblScope unit="page">25</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b68">
+	<monogr>
+		<title/>
+		<author>
+			<orgName type="collaboration">B.4.3 Model Implementation . . . . . . . . . . . . . . . . . . . . . . . . .</orgName>
+		</author>
+		<imprint>
+			<biblScope unit="page">26</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b69">
+	<monogr>
+		<title/>
+		<author>
+			<orgName type="collaboration">Optimization Policy Formulation . . . . . . . . . . . . . . . . . . . . .</orgName>
+		</author>
+		<imprint>
+			<biblScope unit="page">26</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b70">
+	<monogr>
+		<title/>
+		<author>
+			<orgName type="collaboration">B.4.5 Analytical Inverse . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .</orgName>
+		</author>
+		<imprint>
+			<biblScope unit="page">27</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b71">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">B</forename></persName>
+			<affiliation>
+				<orgName type="collaboration">5 Learning Components for Network Optimization . . . . . . . . . . . . . . . . . . . 27 B.5.1 Network Architectures . . . . . . . . . . . . . . . . . . . . . . . . . . .</orgName>
+			</affiliation>
+		</author>
+		<imprint>
+			<biblScope unit="page">27</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b72">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">B</forename></persName>
+			<affiliation>
+				<orgName type="collaboration">2 Online fine-tuning . . . . . . . . . . . . . . . . . . . . . . . . . . . .</orgName>
+			</affiliation>
+		</author>
+		<imprint>
+			<biblScope unit="page">28</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b73">
+	<monogr>
+		<title/>
+		<author>
+			<orgName type="collaboration">B.5.3 Hyperparameters . . . . . . . . . . . . . . . . . . . . . . . . . . . . .</orgName>
+		</author>
+		<imprint>
+			<biblScope unit="page">28</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b74">
+	<monogr>
+		<title/>
+		<author>
+			<orgName type="collaboration">C.1 Analytical Inverse on Linear State Space Model . . . . . . . . . . . . . . . . . .</orgName>
+		</author>
+		<imprint>
+			<biblScope unit="volume">29</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b75">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">C</forename></persName>
+			<affiliation>
+				<orgName type="collaboration">2 Visualization of Policies in Robotic Manipulation . . . . . . . . . . . . . . . . .</orgName>
+			</affiliation>
+		</author>
+		<imprint>
+			<biblScope unit="volume">29</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b76">
+	<monogr>
+		<title level="m" type="main">Leveraging Different Data Sources for Robotic Manipulation</title>
+		<author>
+			<persName><forename type="first">C</forename></persName>
+		</author>
+		<idno>. . . . . . . . . . . . 30</idno>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b77">
+	<monogr>
+		<title/>
+		<author>
+			<orgName type="collaboration">C.4 Comparison of Sample-efficiency during Online Training . . . . . . . . . . . .</orgName>
+		</author>
+		<imprint>
+			<biblScope unit="page">30</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b78">
+	<monogr>
+		<title/>
+		<author>
+			<orgName type="collaboration">C.5 Comparison of Runtime at Inference . . . . . . . . . . . . . . . . . . . . . .</orgName>
+		</author>
+		<imprint>
+			<biblScope unit="page">30</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b79">
+	<monogr>
+		<title level="m" type="main">Online fine-tuning of OHIO Policy in Network Optimization Scenarios</title>
+		<author>
+			<persName><forename type="first">C</forename></persName>
+		</author>
+		<imprint>
+			<biblScope unit="page">31</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

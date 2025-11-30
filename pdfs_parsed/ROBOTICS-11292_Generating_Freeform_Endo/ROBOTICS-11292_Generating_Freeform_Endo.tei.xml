@@ -1,0 +1,1291 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">GENERATING FREEFORM ENDOSKELETAL ROBOTS</title>
+				<funder ref="#_8rcDFCu">
+					<orgName type="full">Templeton World Charity Foundation</orgName>
+				</funder>
+				<funder ref="#_JyWnBbU">
+					<orgName type="full">unknown</orgName>
+				</funder>
+				<funder ref="#_zpGyjVu">
+					<orgName type="full">Berggruen Institute</orgName>
+				</funder>
+				<funder ref="#_UyWp6R4">
+					<orgName type="full">National Science Foundation</orgName>
+					<orgName type="abbreviated">NSF</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Muhan</forename><surname>Li</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Northwestern University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Lingji</forename><surname>Kong</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Northwestern University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Sam</forename><surname>Kriegman</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Northwestern University</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">GENERATING FREEFORM ENDOSKELETAL ROBOTS</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">B7A67F53148F0853DD0AEDB7645E3E35</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2025-11-30T00:16+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract/>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Figure <ref type="figure">1</ref>: An evolving population of endoskeletal soft robots were encoded by a low dimensional latent design genome with minimal morphological assumptions and optimized for locomotion across complex terrains in multiphysics simulation using a shared universal controller that was simultaneously learned alongside morphological design. Videos and code at https://endoskeletal.github.io.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>ABSTRACT</head><p>The automatic design of embodied agents (e.g. robots) has existed for 31 years and is experiencing a renaissance of interest in the literature. To date however, the field has remained narrowly focused on two kinds of anatomically simple robots:</p><p>(1) fully rigid, jointed bodies; and (2) fully soft, jointless bodies. Here we bridge these two extremes with the open ended creation of terrestrial endoskeletal robots: deformable soft bodies that leverage jointed internal skeletons to move efficiently across land. Simultaneous de novo generation of external and internal structures is achieved by (i) modeling 3D endoskeletal body plans as integrated collections of elastic and rigid cells that directly attach to form soft tissues anchored to compound rigid bodies; (ii) encoding these discrete mechanical subsystems into a continuous yet coherent latent embedding; (iii) optimizing the sensorimotor coordination of each decoded design using model-free reinforcement learning; and (iv) navigating this smooth yet highly non-convex latent manifold using evolutionary strategies. This yields an endless stream of novel species of "higher robots" that, like all higher animals, harness the mechanical advantages of both elastic tissues and skeletal levers for terrestrial travel. It also provides a plug-and-play experimental platform for benchmarking evolutionary design and representation learning algorithms in complex hierarchical embodied systems.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">INTRODUCTION</head><p>The manual synthesis of a single robot for a single task requires years if not decades of laborintensive R&amp;D from teams of engineers who rely heavily on expert knowledge, intuition, and hardearned experience. The automatic synthesis of robots may reveal designs that are different from or beyond what human engineers were previously capable of imagining and would be of great use if robots are to be designed and deployed for many disparate tasks in society. However, automating the creation and improvement of a robot's design is notoriously difficult due to the hierarchical and combinatorial nature of the optimization problem: the objective and variables of the robot's controller optimization depend on the optimizer of the robot's discrete mechanical structure (e.g. its distribution of motors and limbs). Considerable effort has been and is being expended to ameliorate <ref type="bibr" target="#b45">(Zhao et al., 2020;</ref><ref type="bibr">Yuan et al., 2022;</ref><ref type="bibr">Strgar et al., 2024)</ref> or obviate <ref type="bibr">(Hejna et al., 2021;</ref><ref type="bibr">Gupta et al., 2022;</ref><ref type="bibr" target="#b31">Matthews et al., 2023)</ref> these technical challenges. Nevertheless, automatically designed robots The behavior each design in the population was optimized in physics simulation for 20 epochs of reinforcement learning under a shared universal controller. The ten red behavioral traces to the right of A-C project the forward locomotion of these randomly generated designs (from 3D to 2D) into the right hand side of the page, at every other epoch of learning. The fitness of a design was based on the best performance it achieved during reinforcement learning. After learning, the mean and covariance matrix of the design distribution were then adapted by evolutionary strategies and a subsequent generation of 64 new designs was sampled from the shifted distribution (E). This process was repeated for dozens of generations (F-J) yielding an evolved design distribution (K) that encodes a population of designs (L-N) with much higher fitness (blue behavioral traces).</p><p>have yet to evolve beyond primitive machines with exceedingly simple body plans, which can be neatly divided into two opposing groups:</p><p>1. fully rigid, jointed bodies <ref type="bibr" target="#b36">(Sims, 1994;</ref><ref type="bibr" target="#b29">Lipson &amp; Pollack, 2000;</ref><ref type="bibr" target="#b0">Auerbach &amp; Bongard, 2014;</ref><ref type="bibr" target="#b45">Zhao et al., 2020;</ref><ref type="bibr">Hejna et al., 2021;</ref><ref type="bibr" target="#b11">Gupta et al., 2021;</ref><ref type="bibr">Yuan et al., 2022)</ref>; and 2. fully soft, jointless bodies <ref type="bibr" target="#b16">(Hiller &amp; Lipson, 2012;</ref><ref type="bibr" target="#b6">Cheney et al., 2018;</ref><ref type="bibr">Kriegman et al., 2020a;</ref><ref type="bibr" target="#b31">Matthews et al., 2023;</ref><ref type="bibr">Wang et al., 2023b;</ref><ref type="bibr">Li et al., 2024;</ref><ref type="bibr">Strgar et al., 2024)</ref>.</p><p>Here we introduce the de novo optimization of externally soft yet internally rigid, jointed body plans-endoskeletal robots (Fig. <ref type="figure">1</ref>)-with minimal assumptions about the robots' external and internal structures (Fig. <ref type="figure" target="#fig_0">2</ref>). Endoskeletal robots contain bones and joints-the lever systems animals use to their mechanical advantage as they gallop across uneven surfaces, climb up trees, and swing from branch to branch. At the same time, endoskeletal robots contain and are encased by soft deformable tissues-the springs animals use to conform to uneven surfaces, absorb shocks, store and release elastic energy, catapult themselves into the air, and capture complex somatosensory signals about their environment. In order to achieve this confluence of soft and rigid body dynamics within a single robot-without presupposing the topology or the geometry of the robot's bones and tissuesa novel multi-physics voxel-based simulator (Fig. <ref type="figure" target="#fig_2">4</ref>) was created and is introduced here alongside a latent endoskeletal embedding and companion generator that sythensizes elastic and rigid voxel cells into freeform tissues and bones, and connects the bones by joints within a functional whole.</p><p>Several existing simulators support two-way coupling between rigid and deformable bodies with joint constraints <ref type="bibr" target="#b35">(Shinar et al., 2008;</ref><ref type="bibr" target="#b22">Kim &amp; Pollard, 2011;</ref><ref type="bibr" target="#b27">Li et al., 2020)</ref>. However they are not naturally amenable to structural optimization because they do not readily expose building blocks (e.g. voxels) to the optimizer; instead, they require a bespoke volumetric mesh to be supplied for each body plan, and the mesh must be carefully designed to remain numerically stable. <ref type="bibr" target="#b21">Jansson &amp; Vergeest (2003)</ref> embedded rigid bodies within a regular grid of passive Hookean springs and masses, which provides suitable building blocks of freeform structure, but does not support joint constraints, actuation, volume preservation under twisting deformations, or the parallelization necessary to scale design to complex bodies composed of large numbers of building blocks. Here, in contrast, we present a massively-parallel simulator that uses a more accurate, twistable model of elasticity <ref type="bibr" target="#b17">(Hiller &amp; Lipson, 2014)</ref> as the basis of building blocks of soft tissues which directly attach to rigid building blocks of bones and articulated skeletons with joint constraints and actuation <ref type="bibr" target="#b1">(Baraff, 2001)</ref>. <ref type="bibr" target="#b5">Cheney et al. (2013)</ref> evolved robots composed of elastic building blocks they called "muscle", "fat" and "bone". The muscles rhythmically pulsed, expanding and contracting in volume; the fat was passive; and the "bone" was equivalent to fat in density and mass but had an order-of-magnitude higher stiffness (Young's modulus). They found that any further increases to bone stiffness prevented the pulsating muscle blocks from sufficiently deforming the robot's jointless body and thus inhibited locomotion. In reality, animal bones are seven orders-of-magnitude stiffer than animal fat <ref type="bibr" target="#b10">(Guimarães et al., 2020)</ref>, and are pulled by tendons and muscles about joints to rapid generate large yet precise dynamic movements of load bearing limbs. One could simply add joints to this elastic model; however, accurate simulations of elastic elements with higher stiffness (and thus higher resonance frequencies) approaching that of animal bones quickly become prohibitively expensive as ever smaller time steps are required to avoid numerical instability. Moreover, the fully "soft" (entirely non-rigid) and jointless robots evolved by <ref type="bibr" target="#b5">Cheney et al. (2013)</ref> also lacked sensors, were composed of no more than a few hundred elastic blocks, and could only move along a perfectly flat surface plane. Here, in contrast, we introduce a new approach that combines hundreds of thousands of both elastically deformable and rigid building blocks into multi-physics bodies that use joints and sensors to navigate complex terrestrial environments.</p><p>Following <ref type="bibr">Hiller &amp; Lipson (2010), Compositional Pattern Producing Networks (CPPNs;</ref><ref type="bibr" target="#b37">Stanley (2007)</ref>) have been used by many others <ref type="bibr" target="#b5">(Cheney et al., 2013;</ref><ref type="bibr" target="#b0">Auerbach &amp; Bongard, 2014;</ref><ref type="bibr" target="#b6">Cheney et al., 2018;</ref><ref type="bibr" target="#b26">Kriegman et al., 2021;</ref><ref type="bibr">Wang et al., 2023a;</ref><ref type="bibr" target="#b7">Cochevelou et al., 2023)</ref> to encode robot designs. CPPNs are a class of feedforward neural networks with spatial inputs (e.g. cartesian coordinates) and hence spatially correlated outputs, which can be used to determine the absence or presence of a cell at each queried spatial coordinate. CPPNs thus provide a simple way to "paint" material into a workspace; however, they struggle to integrate basic structural and functional constraints, such as those which ensure that rigid cells belonging to the same bone form a single contiguous object, that joints are only placed between nearby bones, and that bones remain inside the body. Moreover, one CPPN (its entire architecture) encodes a single design rather than a latent manifold of continuous variables that encode a generative model of robot designs. Here we learn one such continuous representation for endoskeletal robots and demonstrate the learned representation's structural and functional coherence, expressivity, smoothness (Fig. <ref type="figure" target="#fig_3">5</ref>) and interpretability .</p><p>Prior work encoded robot designs into a continuous latent embedding <ref type="bibr" target="#b18">(Hu et al., 2023)</ref>; however, the design space <ref type="bibr" target="#b45">(Zhao et al., 2020)</ref> was limited by graph grammars to simple body plans containing a small number of jointed rigid links with predefined shapes. These simplifying assumptions allowed for effective model predictive control <ref type="bibr" target="#b30">(Lowrey et al., 2019)</ref>, which requires an explicit and accurate model of the robot's dynamics, including its interaction with the environment. Here, in contrast, we use a model-free, end-to-end learning approach to design and control externally-soft body plans with highly non-linear dynamics and multi-physics interactions that are difficult to model explicitly.</p><p>More specifically, we here train a single reinforcement learning system-a "universal controller" (Fig. <ref type="figure" target="#fig_1">3</ref>)-across an evolving population of freeform endoskeletal robots. This is achieved by locally pooling <ref type="bibr" target="#b32">(Peng et al., 2020</ref>) each robot's arbitrary arrangement of high-resolution (voxel-level) sensory channels to align with its skeletal graph, which may then be fed as input to a graph transformer <ref type="bibr" target="#b44">(Yun et al., 2019)</ref>. Graph transformers were previously employed for universal control of many robots with differing physical layouts <ref type="bibr">(Gupta et al., 2022)</ref>; however, these robots were constrained to bilaterally symmetrical "stick figures" composed of jointed rigid cylinders <ref type="bibr" target="#b39">(Ventrella, 1994)</ref>. There was no need to learn a 3D volumetric representation of sensor integration as the stick figures were already in a simple graph form with their sensors directly aligned to the edges of their graph. We here evolve embodied agents beyond the rigid stick figures <ref type="bibr">(Yuan et al., 2022;</ref><ref type="bibr">Gupta et al., 2022)</ref> and boneless "blobs" <ref type="bibr">(Wang et al., 2023a;</ref><ref type="bibr">Huang et al., 2024)</ref> found in recent work with the multiphysics simulation, freeform design and universal control of endoskeletal robots.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">METHODS</head><p>In this section we describe how endoskeletal robots were simulated (Sect. 2.1), encoded (Sect. 2.2) and optimized (Sect. 2.3). A symbol table is provided on the very last page of the paper, in Table. 9.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">SIMULATING ENDOSKELETAL ROBOTS</head><p>We here introduce a novel voxel-based experimental platform that was built from the ground up to support the development of novel representations and algorithms for co-designing the form and function of endoskeletal soft robots. Fig. <ref type="figure" target="#fig_2">4</ref> provides a high level overview of the underlying physics simulator, which enables two-way coupling between freeform soft tissues and freeform rigid bones with joint constraints. In this voxel-based simulator, elastic voxels and rigid voxels are used as building blocks of soft tissues and bones, respectively. Elastic voxels and rigid voxels are subject to their own respective update rules, which are outlined in Appx. B. The most challenging part of building such a simulator was integrating the dynamics of soft and rigid components, which can be summarized by a single equation for all voxels:</p><formula xml:id="formula_0">M v Ẍv = F v b + F v ext + I(v ∈ bone)F v c ,<label>(1)</label></formula><p>where v is a single voxel, M v ∈ R 6×6 is the generalized mass matrix combining mass and inertia terms, Ẍv ∈ R 6 is the second derivative of generalized position X v with respect to time t, F v b ∈ R 6 and F v ext ∈ R 6 are the generalized force terms including force and torque terms, F v b is the effect of all elastic beams (Fig. <ref type="figure" target="#fig_2">4A</ref>) and F v ext is the effect of all external forces such as gravity and friction. F c is the generalized constraint force term which is only applied on rigid voxels using the indicator function I(v ∈ bone). For more details see Appx. B.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">ENCODING ENDOSKELETAL MORPHOLOGY</head><p>We began by procedurally generating synthetic training data-examples of valid endoskeletal body plans-in 3D voxel space using multi-star graphs (Fig. <ref type="figure" target="#fig_7">10A</ref>), which consist of random number of randomly positioned star nodes like this * with a variable number of arms radiating from their center points. The radius and length of the bone and the radius of the surrounding soft tissue in each arm were all randomly assigned. Each arm may connect by a joint to an arm of an adjacent star, or remain unconnected. Synthetic data generation pseudocode and hyperparameters can be found in Appx E. The resulting body was voxelized within a 64 × 64 × 64 cartesian grid. Each voxel in the grid was assigned an integer label i ∈ [1, K + 2], where i = 1 represents empty space, i = 2 represents a soft tissue, and i &gt; 2 was used to represent the (at most K) independent rigid bones. A one-hot encoding was used to represent the workspace: a tensor with shape (64, 64, 64, k + 2).</p><p>A variational autoencoder (VAE; Kingma &amp; Welling ( <ref type="formula">2013</ref>)) with four blocks of Voxception-ResNet modules <ref type="bibr" target="#b4">(Brock et al., 2016)</ref> was then trained to map voxel space into a highly compressed latent distribution consisting of 512 latent dimensions. Prior work that used voxel-based autoencoders considered fixed dataset, which limited their depth and required data augmentation to avoid overfitting <ref type="bibr" target="#b4">(Brock et al., 2016)</ref>. Because we can generate new synthetic data points on demand, our training data is unlimited, and the depth of our autoencoder-and thus its potential for compress, generalize and capture complex hierarchical features-is not constrained by lack of data.</p><p>Each design decoded from the latent space was automatically jointified (as detailed in Fig. <ref type="figure" target="#fig_6">9</ref>), and any exposed bone was covered with a thin layer of soft tissue. This tissue patching process was highly targeted; in randomly generated designs, patching was applied to less than 3% of the workspace and covered less than 13% of the robots' bodies. See Appx. F for VAE hyperparameters.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3">CO-OPTIMIZING ENDOSKELETAL MORPHOLOGY AND CONTROL</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>State space.</head><p>Endoskeletal robots receive high dimensional mechanosensory data</p><formula xml:id="formula_1">s v = {(x v , y v , z v , ϵ v , v v ), . . . | v ∈</formula><p>soft} with 3D position x, y, z, strain ϵ and velocity v from a variable number of soft voxels that are distributed at variable locations in 3D space (Fig. <ref type="figure" target="#fig_1">3C</ref>), depending on the size, shape and deformation of its soft tissues. In addition to sensing the movement and distortion of the soft tissues, proprioception of each rigid bone r and joint j between bones is also taken as input. The state of bones can be represented as s r = {(x r , y r , z r , m r , q r , v r , ω r ), . . . | r ∈ bone} where x, y, z is the position of the center of mass of the bone, m is the mass, q is quaternion representing the orientation, and v and ω are the linear velocity and angular velocity. The state of joints can be represented as s j = {(h j , d j 1 , d j 2 , θ j , θ j min , θ j max ), . . . | j ∈ joints} where h is the hinge axis direction of joint, d 1 is the vector from the joint position to the center of mass of the first connected bone, d 2 is the vector from the joint position to the center of mass of the second connected bone, θ j is the current joint angle, and θ j min and θ j max are the minimum and maximum joint angle limits, respectively. Soft voxel sensing is locally pooled into nodes at the center of mass of each bone (Fig. <ref type="figure" target="#fig_1">3D</ref>) thus aligning soft tissue and skeletal inputs (Fig. <ref type="figure" target="#fig_1">3E</ref>) and promoting "reflex partitioning" <ref type="bibr" target="#b42">(Windhorst et al., 1989)</ref> whereby motors are affected more by local sensors than distant sensors.</p><p>Action space. The action space consists of joint angles, which control the movements and articulation of the robot's internal skeleton. We use a uniform discrete angle action space A = {-1.4 rad, -0.7 rad, 0 rad, 0.7 rad, 1.4 rad} for all joints. We selected 1.4 rad as the limit for joint rotation range to prevent extremely large unrealistic deformation of the soft materials surrounding the joints <ref type="bibr" target="#b3">(Bonet &amp; Wood, 2008)</ref>. We found that a discrete action space greatly simplified and stabilized policy training compared to an otherwise equivalent continuous action space (Fig. <ref type="figure" target="#fig_12">16</ref>).</p><p>Reward. Reward was based on net displacement of the robot across 100 pairs of observations and actions sampled at 10Hz during a simulation episode of 10 seconds. Rewards were generated per episode in the following way:</p><formula xml:id="formula_2">u t = (x t-1 -x 0 , y t-1 -y 0 ) (2) ût = u t ||u t || (3) v t = (x t -x t-1 , y t -y t-1 )<label>(4)</label></formula><formula xml:id="formula_3">r t = -P large , if ||v t || &lt; δ max(û t • v t , -P small ), otherwise<label>(5)</label></formula><p>where x t and y t are the x and y position of the center of mass of the robot at time step t, r t the reward received by the robot, δ is a small threshold value for detecting stationary, and u t is the history movement vector up to the previous frame projected to the xy plane. If the norm of u t is 0, we replace ût with vector (1, 0) pointing in the positive X direction. We apply a large penalty if robot is static and clip a negative reward to a smaller penalty if the robot is moving but in an undesired direction. Eq. 5 encourages the robot to maintain consistent forward motion while penalizing stagnation or drastic directional changes, which was found to be more robust for identifying designs with high locomotive ability compared to using a naive reward based on moving distance in a fixed direction, such as r t = x t -x t-1 . This is because the naive reward may discard designs with high locomotive ability in the wrong direction. In some experiments the reward function was augmented to encourage robots to lift themselves above the surface plane using legs.</p><p>Policy. We employed Proximal Policy Optimization (PPO; <ref type="bibr" target="#b33">Schulman et al. (2017)</ref>) to train a single universal controller for an evolving population of 64 endoskeletal robots. A clone of each design in the population was created, yielding a batch of 128 designs. This last step is intended to broaden the evaluation of each design and so reduce the likelihood of erroneously discarding a good design.</p><p>At each time step t, the policy's observation s t = (s v t , s j t , s r t ) consists of soft voxel observations s v t , joint observations s j t , and rigid bone observations s r t . Given these observations as input, the policy returns actions and value estimates according to the following equations:</p><formula xml:id="formula_4">s l t = SpatialPool(s v t )<label>(6)</label></formula><formula xml:id="formula_5">n t = [s r t , s l t ]<label>(7)</label></formula><formula xml:id="formula_6">(ñ t , ẽt ) = GraphTransformer(n t , s j t ) (8) n * t = MaxPool(ñ t ) (9) V (s t ) = ResNet V (n * t ) (10) z t,j = ResNet π (ẽ t,j ) (11) π(a t,j |s t ) = Softmax(z t,j )<label>(12)</label></formula><p>π(a</p><formula xml:id="formula_7">t |s t ) = j π(a t,j |s t )<label>(13)</label></formula><p>Soft voxel observations s v t are locally pooled <ref type="bibr" target="#b32">(Peng et al., 2020)</ref> into a 64 3 grid using the robot center of mass as the grid origin. The convoluted feature grid is then queried at the center of masses of each rigid bone, forming locally pooled node features s l t (Fig. <ref type="figure" target="#fig_1">3D</ref>). This operation aligns soft tissue sensory inputs with skeletal sensing. The pooled features are then concatenated with the rigid bone observations s r t to form the node features n t , as shown in Fig. <ref type="figure" target="#fig_1">3E</ref>. A graph transformer <ref type="bibr" target="#b34">(Shi et al., 2021)</ref> processes the robot's topology graph, taking the node features n t and edge features s j t (joint observations) as input, and outputting processed node features ñt and processed edge features ẽt . The processed edge features are produced by concatenating processed node features across the two nodes connected by each edge. By max pooling (Fig. <ref type="figure" target="#fig_1">3L</ref>) over the processed node features ñt we obtain a global feature vector n * t (Fig. <ref type="figure" target="#fig_1">3M</ref>), which summarizes the overall state of the robot. The Critic (Fig. <ref type="figure" target="#fig_1">3N</ref>) uses ResNet V to take the pooled node feature n * t and output the value function V (s t ). The Actor (Fig. <ref type="figure" target="#fig_1">3I</ref>) processes edge features ẽt,j , corresponding to each joint j, and passes them through ResNet π to compute the action logits z t,j which define the action distribution for joint j. By computing the softmax over the logits z t,j , probabilities are obtained over the discrete action space A. The overall policy π(a t |s t ) was thus defined as the product of the action distributions over all joints, assuming independence between joints.</p><p>By utilizing a graph transformer to process the robot's topology, the policy effectively learns to condition on both the sensory input and the morphology of a robot. This architecture allows the actor to generate joint-specific actions while the critic evaluates the discounted score</p><formula xml:id="formula_8">V (s t ) = E π T t=0 γ t r t .</formula><p>Fitness. The aggregate behavior of a robot across an entire simulation episode was evaluated against a fitness function. After 20 epochs of learning, each design in the current population was assigned a fitness score equal to the peak fitness it achieved across 40 episodes of simulation.</p><p>Evolutionary design. The population of designs fed to the universal controller was optimized by covariance matrix evolutionary strategies (CMA-ES; <ref type="bibr" target="#b13">Hansen &amp; Ostermeier (2001)</ref>). Briefly, a multivariate normal distribution of designs is sampled from the latent space and the mean vector is "pulled" toward the latent coordinates of sampled designs with the highest fitness and the covariance matrix is adapted to stretch along the most promising dimensions and shrink within others. Because CMA-ES uses ranked fitness scores instead of raw fitness scores to update the mean design vector, undesirable designs can be assigned a large negative rank without interfering with the stability of the optimizer. Body plans that have less than two joints or less than 20% bone, were deemed "invalid designs" and assigned a large negative reward as described below in Sect. 2.3. Less than 15% of the randomly generated robots were invalid under this definition of validity.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">RESULTS</head><p>In this section, we present our learned endoskeletal latent embedding and its use in body-brain codesign across four different task environments. We also perform a series of control experiments that isolate the effect of morphological evolution in order to determine its role in achieving high performing endoskeletal robots.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">ENDOSKELETAL LATENT SPACE</head><p>The learned latent space is smooth and expressive (Fig. <ref type="figure" target="#fig_3">5</ref>) and was found to contain tunable genes that encode specific morphological traits, such as body height, length, width, volume and bone count . The trained VAE is able to encode and decode previously unseen training data points with high accuracy (Fig. <ref type="figure" target="#fig_7">10</ref>) while generalizing beyond the training data: Most designs sampled from the latent space look very different from the multi-star graphs (see e.g. Fig. <ref type="figure" target="#fig_7">10A</ref>) used to train the VAE. For example, skeletal voids (i.e. holes that pass through individual bones) were not present in the generated synthetic training data set but they are present in the bones of decoded designs from randomly-sampled latent codes (Fig. <ref type="figure" target="#fig_3">5A ′</ref> ).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">TASK ENVIRONMENTS</head><p>Flat Ground. On perfectly flat ground, selection for forward locomotion resulted in the evolution of snake-like body plans with two joints (Fig. <ref type="figure" target="#fig_4">6A</ref>) that are able to move at high speeds. The dark gray line in A is mean peak fitness across the 64 designs in the population; the shaded region is the CI of the mean. Similarly, the average fitness achieved by each design across its simulation episodes is shown at each learning epoch (in B). An otherwise equivalent experiment with random morphological search instead of evolution strategies was also performed (purple curves in A and B). After 30 generations of evolution (600 total epochs of RL), the 64 designs from the best evolved population (blue dot; gen 23) were compared to the 64 designs from initial randomlygenerated population (green dot; gen 0). To do so, the designs within each population were frozen and their behavior was re-optimized (C) starting with the optimized universal controller from gen 23 (Optimized RL). A second comparison was then made in which a new universal controller re-learned for each population separately, from scratch (RL from scratch). In both comparisons, the learning conditions were equivalent and the only differences between the populations were morphological. And in both comparisons the evolved designs easily outperformed the initial designs. This indicates that design evolution was necessary: it pushed search into regions of the latent space containing better morphologies with higher fitness potential that better support universal controller training.</p><p>Upright Locomotion. Given the impressive speed of snakes on flat ground, a second term was added to the reward function to promote body plans that exhibit upright legged locomotion. To do so, the proportion of body voxels that fell within 5 cm of the surface plane during behavior was subtracted from the original reward at each step of learning, and the original fitness was divided by the mean proportion of voxels that fell below this threshold across the full simulation episode. This resulted in less serpentine body plans with more joints (Fig. <ref type="figure" target="#fig_9">12</ref>). The best evolved design is much more complex, and uses its legs to lift its body above the ground during locomotion (Fig. <ref type="figure" target="#fig_4">6B</ref>).</p><p>Potholes. Next, we explored a more challenging terrain. In the Potholes environment, there are regularly-spaced depressions ("potholes") along the surface plane. The depth, width, and spacing of the potholes can be easily adjusted in the provided code (indeed any 2D height matrix can be supplied to change the terrain). With relatively small, tightly-spaced potholes, the best evolved designs (Fig. <ref type="figure" target="#fig_4">6C</ref>) are longer and more complex than the snakes that dominated flat ground under the same fitness function (Fig. <ref type="figure" target="#fig_4">6A</ref>). A common adaptation that evolved for navigating potholes was broad feet, which the robots used to push off and pull against the vertical walls inside the potholes.</p><p>Mountain Range. In our fourth and final environment, robots must climb up a slope in order to move away from the origin. In this mountain environment, the best evolved designs (Fig. <ref type="figure" target="#fig_4">6D</ref>) were also slightly more complex than the flatland snakes.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">THE NECESSITY OF MORPHOLOGICAL EVOLUTION</head><p>Across all four task environments, evolved design populations significantly outperform the randomly-generated initial populations of designs from the first generation of evolution. This could be due to improvements in the universal controller or better body plans, or both. In order to isolate the effects of morphological evolution and policy training, we performed the following three control experiments using the Upright Locomotion task environment.</p><p>In the first experiment, we extracted the design population that achieved the highest mean reward during evolution (Evolved designs in Fig. <ref type="figure" target="#fig_5">7B</ref>), as well as the RL model checkpoint at this point (Optimized RL in Fig. <ref type="figure" target="#fig_5">7C</ref>). We also extracted the initial designs that were randomly generated at the very beginning of evolution (gen 0). The initial designs (Fig. <ref type="figure" target="#fig_8">11</ref>) were frozen and the controller was re-optimized using this population of frozen designs for 100 epochs starting from optimized RL checkpoint. In a parallel independent experiment, the evolved designs (Fig. <ref type="figure" target="#fig_9">12</ref>) were likewise frozen and the controller was re-optimized using the frozen evolved population of designs for 100 epochs starting from optimized RL checkpoint. The same procedure was repeated, this time retraining the control policy from scratch, for both frozen design populations separately. In both cases-starting policy training from scratch or from the RL checkpoint-the frozen evolved designs significantly outperformed the frozen initial designs (Fig. <ref type="figure" target="#fig_5">7C</ref>). In both frozen design populations, the universal controller from the checkpoint immediately exhibits the best performance achieved after retraining from scratch. This shows that RL does not suffer catastrophic forgetting: the policy does not forget how to control the initial designs as the population evolves to contain different, better designs.</p><p>These results suggest that morphological evolution yields better designs but they do not prove that evolution is necessary. It could be the case that good designs will simply arise by random mutations alone, without cumulative selection across discrete generations. As a final control experiment we tested this hypothesis by replacing evolutionary strategies with random search (purple curve in Fig. <ref type="figure" target="#fig_5">7A,</ref><ref type="figure">B</ref>). Random morphological search performed significantly worse than evolutionary strategies. This suggests that morphological evolution (mutation and selection) is indeed necessary.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">DISCUSSION</head><p>In this paper we introduced the computational design of freeform endoskeletal robots. The openended nature of the design problem allowed us to procedurally generate a never-ending synthetic data flow of endoskeletal training examples for representation learning, which in turn allowed for effective learning of a much deeper voxel-based autoencoder than those learned in prior work with fixed datasets <ref type="bibr" target="#b4">(Brock et al., 2016)</ref>. This resulted in a very smooth and highly expressive latent embedding of design space (Fig. <ref type="figure" target="#fig_3">5</ref>), which we employed as a genotype space (and the decoder as the genotype-phenotype mapping) for morphological evolution.</p><p>We found that a universal controller could be simultaneously obtained by reinforcement learning during morphological evolution despite the wide range of endoskeletal geometries and topologies that emerged within the evolving population. We observed across several independent experimental trials that morphological evolution tended to push search into promising regions of latent space consisting of high performing body plans that facilitated policy training. For flat ground, this resulted in the evolution of simple two-jointed snakes (Fig. <ref type="figure" target="#fig_4">6A</ref>), which in hindsight makes intuitive sense: such bodies are easier to control. But, in the other three task environments we tested, many other, more complex solutions evolved, including legged locomotion (Fig. <ref type="figure" target="#fig_4">6B</ref>). This suggests that other researchers may leverage the open-endedness of this computational design platform to identify which physical environments and fitness pressures lead to the emergence of particular abilities and the embodied structures required to support those abilities Others may use our simulator as an easy-to-integrate software library for benchmarking their own voxel-based representations and learning algorithms in the four task environments released here, or by creating their own terrain maps and reward functions based on these examples. To this end, we also provide an example of object manipulation ("dribbling a football"; Fig. <ref type="figure">8</ref>), which we hope inspires others to create their own objects and build more, and more intricate, virtual worlds. However, there were key limitations of the present work that may be overcome by future work. First, because skeletons were assumed to be inside of each robot, rigid body collisions were not modeled, and thus external rigid horns, claws, shells, etc. were not possible. Also, fluids were not modeled, and thus the simulator was restricted to terrestrial environments and land based behaviors. But the most important limitation of this paper is that simulated designs were not realized as physical robots. Recent advances in volumetric 3D printing <ref type="bibr" target="#b8">(Darkes-Burkey &amp; Shepherd, 2024)</ref> are beginning to enable the fabrication of endoskeletal bodies that flex their muscles but are not yet capable of locomotion. This suggests that artificial endoskeletal systems will soon move through our world, opening the way to evolved endoskeletal robots that begin to approach the sophisticated-and perhaps eventually cognitive behavior of evolved endoskeletal organisms.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A SUPPLEMENTAL FIGURES</head><p>Figure <ref type="figure">8</ref>: Object manipulation. One of the designs that evolved for Upright Locomotion performs a new task: it pushes an object forward. This design was among several others that we sampled from the evolving population analyzed in Fig. <ref type="figure" target="#fig_5">7</ref>, placed behind a soft sphere (teal), and actuated using the universal controller from the Optimized RL checkpoint in Fig. <ref type="figure" target="#fig_5">7C</ref>. Videos of the resulting behaviors and the source code necessary to reproduce our results can be found on our project page. https://endoskeletal.github.io.      Figure <ref type="figure" target="#fig_3">15</ref>: Programmable morphology. The best design that evolved for Upright Locomotion was extracted (from Fig. <ref type="figure" target="#fig_4">6B</ref>,F) and the found genes for volume (A), bone count (B), length (C), width (D) and height (E) were individually modulated to demonstrate the precision with which evolved morphologies can be manually redesigned through "genetic engineering". Some genes afford greater control over a specific morphological trait than others; however, this may be attributed to the simplicity of the procedure employed to screen for genes, which only captures pairwise linear associations between a manually-specified morphological trait and an individual latent feature. Figure <ref type="figure" target="#fig_5">17</ref>: Universal and individual controllers. An otherwise equivalent experiment was conducted in which the universal controller shared by all 64 designs in the population was replaced with a bespoke individual controller for each design. As in Fig. <ref type="figure" target="#fig_4">6</ref>, the peak fitness achieved by each design was averaged across the population before plotting the cumulative max (A). This statistic, which we term "best so far", captures the progress of the entire population. Training 64 independent policies for 30 epochs required 44.8 hours on 4 NVIDIA H100 SXM GPUs. During the same time frame on the same hardware the universal controller can be trained for 451 epochs and thereby achieve much higher fitness. Over the first 30 epochs of learning, the performance of the universal controller was not statistically different from that of the individual controllers (B), and since design evolution was only advanced a single generation, the designs under universal control were visually similar to those with independent controllers, with both populations closely resembling the random initial population (Fig. <ref type="figure" target="#fig_8">11</ref>).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B SIMULATION</head><p>In this section we describe the underyling soft and rigid body physics behind our endoskeletal robot simulator. We will use the symbol τ for both moment and torque to avoid confusion. Subscripts are used to indicate the source of an effect and superscripts indicate the target of an effect.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.1 SOFT VOXELS</head><p>Following <ref type="bibr" target="#b17">Hiller &amp; Lipson (2014)</ref>, soft voxels are defined as a point of mass with rotational inertia in space. Each surface of a soft voxel may connect by a Euler-Bernoulli beam with zero mass to an adjacent soft voxel (Fig. <ref type="figure" target="#fig_2">4A</ref>) or rigid voxel (Fig. <ref type="figure" target="#fig_2">4B,</ref><ref type="figure">C</ref>). Each beam exerts moment τ b and force f b onto the corresponding connected voxel when deformed from expansion, compression or twisting.</p><p>Although Euler-Bernoulli beams are more complex to compute than Hookean springs, the additional torsional moment τ b contributes to preserving volume when the structure is under external torsional stress. Since endoskeletal robots embed joints between rigid bones inside soft tissue and produce large deformations, preserving volume prevents generating invalid force and moment values when soft tissues are radically compressed and thereby stabilizes simulation.</p><p>The moment τ b and force f b generated by beams can be computed from position x = (x, y, z) and rotation θ of voxels v 1 and v 2 attached on both ends using a constant stiffness matrix K:</p><formula xml:id="formula_9">   f v1 b τ v1 b f v2 b τ v2 b    = [K]    x v1 θ v1 x v2 θ v2   <label>(14)</label></formula><p>Following Newton's second law, we can express the equation of motion for soft voxels as:</p><formula xml:id="formula_10">m v ẍv = f v b + f v ext I v θv = τ v b + τ v ext (<label>15</label></formula><formula xml:id="formula_11">)</formula><p>where f v ext and τ v ext represent external force and moment caused by gravity, friction, and contacting force etc. For simplicity, we will define generalized mass, position and force representations M v , X v and F v and rewrite Eq. 15 as:</p><formula xml:id="formula_12">M v Ẍv = F v b + F v ext with X v = x v θ v , F v = f v τ v , M v = m v E 0 0 I v (<label>16</label></formula><formula xml:id="formula_13">)</formula><p>where E is the identity matrix.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2 RIGID VOXELS</head><p>Rigid voxels are affected by the beams of connected soft voxels (Fig. <ref type="figure" target="#fig_2">4C</ref>), generalized external forces F v ext , and additional generalized constraint forces F v c , as from joints (Fig. <ref type="figure" target="#fig_2">4D</ref>). Since rigid voxels belonging to the same rigid bone r do not have relative motion, we compute the generalized position X r of the compound rigid bone r and infer X v . As each rigid bone will be connected by many beams to its surrounding soft voxels, we will use F r b as the total generalized force exerted by all beams to simplify the representation:</p><formula xml:id="formula_14">M r Ẍr = F r b + F r ext + F r c<label>(17)</label></formula><p>For F r b and F r ext , torque is also generated by forces applied to the center of component rigid voxels. Thus:</p><formula xml:id="formula_15">F r b = v∈r,b∈v f v b τ v b + (x v -x r ) × f v b and F r ext = v∈r f v ext τ v ext + (x v -x r ) × f v ext (<label>18</label></formula><formula xml:id="formula_16">)</formula><p>where x r represents the center of mass of the corresponding rigid bone r.</p><p>Contacts were modeled between voxel pairs and contact forces were thus aligned to the center of colliding voxels instead of the center of mass of the rigid bones. To prevent generating a false torque term in F v ext , the contact force does not contribute to the torque.</p><p>Finally, constrained dynamics were used to compute F r c as follows. Constraints were defined as functions between two rigid bones r 1 and r 2 : c(X r1 , X r2 ) ≥ 0</p><p>For convenience, we now remove superscripts and use concatenated X, F , and block-diagonalized M to represent attributes of both bones. By taking the time derivative of constraint function c we obtain the Jacobian matrix J which maps global space to constraint space:</p><formula xml:id="formula_18">ċ(X) = J Ẋ<label>(20)</label></formula><p>Introducing Lagrange multiplier λ, which physically represents applied constraint forces, and we can rewrite Eq. 17 as:</p><formula xml:id="formula_19">M Ẍ = F + J T λ with F = F b + F ext<label>(21)</label></formula><p>By substituting Eq. 21 into Eq. 20 we get:</p><formula xml:id="formula_20">ċ(X) = J Ẋ old + JM -1 (F + J T λ)∆t<label>(22)</label></formula><p>where Ẋ old is speed from the last time step; this derivative needs to be non-negative if we wish the constraint to be satisfied at last time point. We also add a bias factor <ref type="bibr" target="#b2">(Baumgarte, 1972)</ref> to correct constraint errors incrementally:</p><formula xml:id="formula_21">ċ(X) = J Ẋ old + JM -1 (F + J T λ)∆t + β ∆t c old (X) ≥ 0 (<label>23</label></formula><formula xml:id="formula_22">)</formula><p>where β is a constant that controls the constraint error correction rate in each time step.</p><p>Reordering terms in Eq. 23 and we obtain equation system in the form of a linear complementarity problem (LCP) and then solve λ using the projected Gauss-Seidel (PGS) algorithm <ref type="bibr" target="#b9">(Erleben, 2013)</ref>:</p><formula xml:id="formula_23">A = JM -1 J T ,<label>(24)</label></formula><formula xml:id="formula_24">w = J Ẋ old + JM -1 F ∆t + β ∆t c old (X),<label>(25)</label></formula><formula xml:id="formula_25">Aλ + w ≥ 0 (26) λ ≥ 0 (27) λ ⊥ Aλ + w<label>(28)</label></formula><p>Note that Eq. 27 is required since λ is in constraint space and it should be in the positive direction that satisfies the constraint. Note also that Eq. 28 is required since constraint forces does not add energy to the system and thus should always be perpendicular to the direction of the constraint change.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C FROM SIMULATION TO REALITY: FUTURE WORK</head><p>The endoskeletal robots in this paper were confined to simulated tasks within a virtual world. Though significant effort was dedicated to ensuring that the simulated mechanics, simulated environments and simulated materials closely resembled physical reality and realizable morphologies (Table <ref type="table">7</ref>), it is in general difficult to guarantee that the behavior of a system optimized in simulation will transfer with sufficient fidelity to reality <ref type="bibr" target="#b20">(Jakobi et al., 1995)</ref>. It remains to determine the effect that universal controllers have on sim2real transfer, since sim2real of universal control has yet to be attempted. But because our approach simultaneously optimizes a population of many robots with differing topological, geometrical, sensory and motor layouts, it realizes the desired behavior in many unique ways and thereby provides many more opportunities for successful sim2real transfer compared to other methods that optimize a single design <ref type="bibr">(Kriegman et al., 2020b)</ref>. We also predict that the inherent capacity of a universal controller to generalize across these differing action and observation spaces will render the policy more transferable across certain differences between simulation and reality, compared to a bespoke single-morphology controller. Attach node i to parent node p 18: end for  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D OVERVIEW OF THE ENTIRE CO-DESIGN PIPELINE</head></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Designing endoskeletal robots. A population of 64 robot designs (A-C) was sampled from a multivariate normal distribution (D) centered about an initially random point in latent space.The behavior each design in the population was optimized in physics simulation for 20 epochs of reinforcement learning under a shared universal controller. The ten red behavioral traces to the right of A-C project the forward locomotion of these randomly generated designs (from 3D to 2D) into the right hand side of the page, at every other epoch of learning. The fitness of a design was based on the best performance it achieved during reinforcement learning. After learning, the mean and covariance matrix of the design distribution were then adapted by evolutionary strategies and a subsequent generation of 64 new designs was sampled from the shifted distribution (E). This process was repeated for dozens of generations (F-J) yielding an evolved design distribution (K) that encodes a population of designs (L-N) with much higher fitness (blue behavioral traces).</figDesc><graphic coords="2,108.00,81.86,395.97,212.30" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 3 :</head><label>3</label><figDesc>Figure3: A universal controller for freeform endoskeletal robots. The control of an endoskeletal robot (A) utilizes a graph data structure with edges that map bone connections within its skeleton, edge features that track the position, orientation and angle of each joint, and node features that track the position, orientation and movement of each bone (B). The controller also tracks proprioceptive and mechanosensory input from the position, velocity and strain of the robot's soft tissues (C), which is locally pooled into the center of mass of each bone (D) thereby transforming the soft tissue's sensory input from voxel space to a graph that aligns with the skeletal sensory graph (E). The combined rigid+soft sensory graph is then fed as input to a graph transformer (F). The graph transformer distils sensory signatures across the graph into updated node features (G), and updated edge features (H). The Actor (I) takes the updated edge features as input and outputs motor commands (J): the target rotation angle for each joint (K). The updated node features are pooled by globally by a channel-wise maximum across the node dimension (L) to retrieve a graph-level output (M), which the Critic (N) uses to predict a value function based on the robot's current state information.</figDesc><graphic coords="3,108.00,81.85,395.99,174.28" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Simulating endoskeletal robots. Soft tissues (green masses) were modeled by a grid of Euler-Bernoulli beams (A) that may twist and stretch and directly attach to bones (blue masses; B and C) that follow rigid bodied dynamics with joint constraints (D). More details about the simulator can be found in Sect. 2.1 and Appx. B.</figDesc><graphic coords="4,108.00,81.86,395.96,105.46" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Interpolating between three points in endoskeletal latent space. Designs sampled from a 2D slice of the learned latent embedding (A-O) and their internal jointed skeletons (A ′ -O ′ ), where A ′ reveals the skeleton of A and cyan cylinders show the location of hinge joints between bones in each skeleton. The three corner designs (A,K,O) were drawn from arbitrarily selected latent coordinates and the 12 designs between them sit with equal spacing along a plane of linear interpolation. The visible smoothness, mechanical coherence, and geometric and topological expressiveness of the voxel-based latent space facilitated the co-design of morphology and control.</figDesc><graphic coords="5,108.00,81.86,395.99,370.52" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Task environments. We considered four task environments: Flat Ground (A), Upright Locomotion (on flat ground; B), Potholes (C) and Mountain Range (D). In each one, two independent evolutionary trials were conducted, and the peak fitness achieved by each design was averaged across the population before plotting the cumulative max (E-H). The best design is shown for each environment (A-D). Rewarding net displacement over flat ground (A,E) results in the evolution of snakes (A). We ran optimization for extra time (100 generations) to see if legs would emerge, but evolution failed to escape the local optima of snakes. Adding a second component to the reward function that tracks the proportion of body voxels that fall below a prespecified height threshold during behavior (B,F) resulted in legged locomotion (B), and continued to innovate when provided extra time. Increasing the difficultly of the terrain also promoted morphological diversity (C,D).</figDesc><graphic coords="8,108.00,81.86,396.00,199.74" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: Evolution of learning. A population of 64 designs was iteratively drawn from an evolving design distribution and used by reinforcement learning to obtain a universal controller. The peak fitness achieved by each design across 20 epochs of RL is plotted (with 95% bootstrapped confidence intervals) at each generation of design evolution in the Upright Locomotion task environment (A).The dark gray line in A is mean peak fitness across the 64 designs in the population; the shaded region is the CI of the mean. Similarly, the average fitness achieved by each design across its simulation episodes is shown at each learning epoch (in B). An otherwise equivalent experiment with random morphological search instead of evolution strategies was also performed (purple curves in A and B). After 30 generations of evolution (600 total epochs of RL), the 64 designs from the best evolved population (blue dot; gen 23) were compared to the 64 designs from initial randomlygenerated population (green dot; gen 0). To do so, the designs within each population were frozen and their behavior was re-optimized (C) starting with the optimized universal controller from gen 23 (Optimized RL). A second comparison was then made in which a new universal controller re-learned for each population separately, from scratch (RL from scratch). In both comparisons, the learning conditions were equivalent and the only differences between the populations were morphological. And in both comparisons the evolved designs easily outperformed the initial designs. This indicates that design evolution was necessary: it pushed search into regions of the latent space containing better morphologies with higher fitness potential that better support universal controller training.</figDesc><graphic coords="9,108.00,81.86,396.00,140.80" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 9 :</head><label>9</label><figDesc>Figure9: Jointification. The learned latent space encodes a generative model of an endoskeletal body plan: a external soft tissue geometry (A) and an internally segmented skeleton (B). The latent space also implicitly encodes the location and orientation of each joint in the skeleton: at the interface of each pair of bones in voxel space (C). In order to simulate a joint, voxels along the contact surface of two opposing bones are extracted (D) and Principal Component Analysis is used to construct an oriented bounded box around them (E). A hinge joint is then positioned at the center of mass of the contact surface with a direction along with the longest axis of the bounding box (F).</figDesc><graphic coords="14,193.25,266.55,85.34,85.33" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 10 :</head><label>10</label><figDesc>Figure 10: Examples of encoding previously unseen sythentic training data (A) and reconstructing each one (B) using the fully optimized VAE. Each column displays a sample/reconstruction pair.</figDesc><graphic coords="14,108.00,480.60,395.98,214.49" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 11 :</head><label>11</label><figDesc>Figure 11: Ancestors. Part of a random initial population, sorted by net displacement (in meters).</figDesc><graphic coords="15,108.00,82.58,395.98,296.99" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>Figure 12 :</head><label>12</label><figDesc>Figure 12: Descendants. Part of the evolved population that descended from the initial population shown above in Fig. 11 for Upright Locomotion. Under each design, its net displacement in meters.</figDesc><graphic coords="15,108.00,405.09,395.98,296.99" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>Figure 13 :</head><label>13</label><figDesc>Figure13: Screening for latent genes. We measured the Pearson correlation coefficient (ρ) of the 512 latent features and the body volume of one million randomly sampled designs (A). The set of latent features that are highly correlated with volume (|ρ| &gt; 0.1) were extracted as "the gene for volume", the effect of which can be increased or decreased on demand (B). The effect of tuning the gene for volume ±2σ is shown for the design decoded from the sample mean of the latent space (µ). The same procedure was repeated to identify and modulate genes for bone count (C, D), length (E, F), width (G, H) and height (I, J).</figDesc><graphic coords="16,108.00,83.94,395.97,560.01" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><head>Figure 14 :</head><label>14</label><figDesc>Figure 14: Gene editing. The best design that evolved for Upright Locomotion was extracted (A) and the set of latent features found to be individually correlated with body volume-the gene for volume-was incrementally increased and the volume of the resulting design was measured (B-G).The entire latent genome is shown to the right of each decoded design, with features outside the volume gene grayed out. Positively correlated features (240, 390 and 471) were amplified, and negatively correlated features (189 and 361) were reversed by 0.25σ in each row, yielding progressively thicker body parts within the evolved body shape.</figDesc><graphic coords="17,108.00,144.60,395.99,438.66" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_12"><head>Figure 16 :</head><label>16</label><figDesc>Figure 16: Discrete and continuous action spaces. Peak (A) and average (B) fitness is plotted for the Upright Locomotion task, as in Fig.7A and B. Two kinds of action spaces were compared: discrete (gray) and continuous (pink). The discrete action space is {-1.4 rad, -0.7 rad, 0 rad, 0.7 rad, 1.4 rad} and the continuous action space is [-1.4 rad, 1.4 rad], for all joints. In both panels, each line is a mean across the 64 designs in the population and the shaded regions are a 95% bootstrapped CI of the mean. Although both continuous and discrete action spaces are viable, a discrete set of actions greatly simplified and stabilized universal policy training under the tested conditions.</figDesc><graphic coords="19,156.26,105.77,297.01,162.11" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_13"><head>Figure 18 :</head><label>18</label><figDesc>Figure 18: Data flow. Synthetic examples are used to encode the latent search space in which evolution operates. An evolving population of designs decoded from this space are simulated and used to train a controller. The population is updated based on the fitness of the designs.</figDesc><graphic coords="22,108.00,110.65,395.97,56.18" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0"><head></head><label></label><figDesc></figDesc><graphic coords="1,108.00,155.52,395.97,126.31" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0"><head></head><label></label><figDesc></figDesc><graphic coords="18,108.00,184.38,395.99,359.11" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Hyperparameters and their ranges used in the procedural generation of synthetic robot body plans. Radius of the soft (tissue) parts for node i.</figDesc><table><row><cell cols="3">Parameter Range / Values Description</cell></row><row><cell cols="2">Global Parameters</cell><cell></cell></row><row><cell>K min</cell><cell>3</cell><cell>Minimum number of nodes (stars) per robot.</cell></row><row><cell>K max</cell><cell>8</cell><cell>Maximum number of nodes (stars) per robot.</cell></row><row><cell>ψ</cell><cell>0.9</cell><cell>Degradation ratio multiplier for limb length per hierar-</cell></row><row><cell></cell><cell></cell><cell>chical level.</cell></row><row><cell cols="3">Node Parameters (for each node i)</cell></row><row><cell>C i</cell><cell>{2, 3, 4}</cell><cell>Maximum number of children (arms) for node i.</cell></row><row><cell>L i</cell><cell>[0.1, 0.3]</cell><cell>Limb length for node i.</cell></row><row><cell>r rigid,i</cell><cell>[0.02, 0.05]</cell><cell>Radius of the rigid (bone) parts for node i.</cell></row><row><cell>r soft,i</cell><cell>[0.02, 0.07]</cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 9 :</head><label>9</label><figDesc>Symbols.</figDesc><table><row><cell cols="2">Symbol Meaning</cell></row><row><cell>Simulation</cell><cell></cell></row><row><cell>m</cell><cell>Mass</cell></row><row><cell>x, y, z</cell><cell>Position of each axis in space</cell></row><row><cell>ϵ</cell><cell>Average strain of a soft voxel</cell></row><row><cell>x</cell><cell>Position in space</cell></row><row><cell>v</cell><cell>Linear velocity</cell></row><row><cell>ω</cell><cell>Angular velocity of a rigid bone</cell></row><row><cell>q</cell><cell>Quaternion representing the orientation</cell></row><row><cell>θ</cell><cell>Rotation in space</cell></row><row><cell>τ</cell><cell>Moment or torque</cell></row><row><cell>f</cell><cell>Force</cell></row><row><cell>X</cell><cell>Generalized position</cell></row><row><cell>Ẋ</cell><cell>Generalized velocity</cell></row><row><cell>Ẍ</cell><cell>Generalized acceleration</cell></row><row><cell>Ẋold</cell><cell>Generalized velocity from the previous time step</cell></row><row><cell>M</cell><cell>Generalized mass matrix</cell></row><row><cell>K</cell><cell>Stiffness matrix of a beam</cell></row><row><cell>I</cell><cell>Inertia</cell></row><row><cell>F</cell><cell>Generalized force vector</cell></row><row><cell>c(X)</cell><cell>Constraint function between two rigid bones</cell></row><row><cell>J</cell><cell>Jacobian matrix</cell></row><row><cell>λ</cell><cell>Lagrange multiplier</cell></row><row><cell>A</cell><cell>Matrix in the LCP</cell></row><row><cell>w</cell><cell>Term involving velocities and external forces in the LCP</cell></row><row><cell>∆t</cell><cell>Time step size in simulation</cell></row><row><cell>β</cell><cell>Constraint error correction rate</cell></row><row><cell cols="2">Reinforcement Learning</cell></row><row><cell>r</cell><cell>Reward</cell></row><row><cell>s</cell><cell>State</cell></row><row><cell>a</cell><cell>Action</cell></row><row><cell>V</cell><cell>Value function</cell></row><row><cell>π</cell><cell>Policy function</cell></row><row><cell>γ</cell><cell>Discount factor</cell></row><row><cell>z</cell><cell>Action logits</cell></row><row><cell>A</cell><cell>Action space</cell></row><row><cell>n</cell><cell>Node features</cell></row><row><cell>e</cell><cell>Edge features</cell></row><row><cell>θ</cell><cell>Joint angle</cell></row><row><cell>h</cell><cell>Hinge axis direction of a joint</cell></row><row><cell>d 1 , d 2</cell><cell>Vectors from joint to the center of mass of connected bones</cell></row><row><cell>u</cell><cell>History movement vector</cell></row><row><cell>v</cell><cell>Movement vector between two time steps, or linear velocity</cell></row><row><cell>Utilities</cell><cell></cell></row><row><cell>I</cell><cell>Indicator function</cell></row><row><cell>E</cell><cell>Identity matrix</cell></row><row><cell cols="2">Subscript and Superscript Conventions</cell></row><row><cell>b</cell><cell>Beam (subscript)</cell></row><row><cell>ext</cell><cell>External (subscript)</cell></row><row><cell>t</cell><cell>Time step in RL (subscript)</cell></row><row><cell>v</cell><cell>Soft voxel (superscript)</cell></row><row><cell>r</cell><cell>Rigid bone (superscript)</cell></row><row><cell>j</cell><cell>Joint (subscript/superscript)</cell></row><row><cell>l</cell><cell>Local pool (superscript)</cell></row></table></figure>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>ACKNOWLEDGMENTS</head><p>This research was supported by <rs type="funder">NSF</rs> award <rs type="grantNumber">FRR-2331581</rs>, Schmidt Sciences <rs type="grantNumber">AI2050</rs> grant <rs type="grantNumber">G-22-64506</rs>, <rs type="funder">Templeton World Charity Foundation</rs> award no. <rs type="grantNumber">20650</rs>, and the <rs type="funder">Berggruen Institute</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_UyWp6R4">
+					<idno type="grant-number">FRR-2331581</idno>
+				</org>
+				<org type="funding" xml:id="_JyWnBbU">
+					<idno type="grant-number">AI2050</idno>
+				</org>
+				<org type="funding" xml:id="_8rcDFCu">
+					<idno type="grant-number">G-22-64506</idno>
+				</org>
+				<org type="funding" xml:id="_zpGyjVu">
+					<idno type="grant-number">20650</idno>
+				</org>
+			</listOrg>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F MORE HYPERPARAMETERS</head></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Environmental influence on the evolution of morphological complexity in machines</title>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">E</forename><surname>Auerbach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Josh</forename><forename type="middle">C</forename><surname>Bongard</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">PLoS Computational Biology</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page">1003399</biblScope>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Physically based modeling: Rigid body simulation</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Baraff</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">SIGGRAPH Course Notes</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="2" to="3" />
+			<date type="published" when="2001">2001</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Stabilization of constraints and integrals of motion in dynamical systems</title>
+		<author>
+			<persName><forename type="first">Joachim</forename><surname>Baumgarte</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Computer Methods in Applied Mechanics and Engineering</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="1" to="16" />
+			<date type="published" when="1972">1972</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Nonlinear Continuum Mechanics for Finite Element Analysis</title>
+		<author>
+			<persName><forename type="first">Javier</forename><surname>Bonet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><forename type="middle">D</forename><surname>Wood</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2008">2008</date>
+			<publisher>Cambridge University Press</publisher>
+		</imprint>
+	</monogr>
+	<note>2nd edition</note>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Brock</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Theodore</forename><surname>Lim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><forename type="middle">M</forename><surname>Ritchie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Weston</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1608.04236</idno>
+		<title level="m">Generative and discriminative voxel modeling with convolutional neural networks</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Unshackling evolution: Evolving soft robots with multiple materials and a powerful generative encoding</title>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Cheney</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Maccurdy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Clune</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hod</forename><surname>Lipson</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Conference on Genetic and Evolutionary Computation</title>
+		<meeting>the Conference on Genetic and Evolutionary Computation</meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="page" from="167" to="174" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Scalable co-optimization of morphology and control in embodied machines</title>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Cheney</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Bongard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vytas</forename><surname>Sunspiral</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hod</forename><surname>Lipson</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of The Royal Society Interface</title>
+		<imprint>
+			<biblScope unit="volume">15</biblScope>
+			<biblScope unit="issue">143</biblScope>
+			<biblScope unit="page">20170937</biblScope>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Differentiable soft-robot generation</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Franc ¸ois Cochevelou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin-Pierre</forename><surname>Bonner</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Schmidt</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Genetic and Evolutionary Computation Conference (GECCO)</title>
+		<meeting>the Genetic and Evolutionary Computation Conference (GECCO)</meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="129" to="137" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Volumetric 3D printing of endoskeletal soft robots</title>
+		<author>
+			<persName><forename type="first">Cameron</forename><surname>Darkes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">-</forename><surname>Burkey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><forename type="middle">F</forename><surname>Shepherd</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advanced Materials</title>
+		<imprint>
+			<biblScope unit="page">2402217</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Numerical methods for linear complementarity problems in physics-based animation</title>
+		<author>
+			<persName><forename type="first">Kenny</forename><surname>Erleben</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACM SIGGRAPH 2013 Courses</title>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="page" from="1" to="42" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">The stiffness of living tissues and its implications for tissue engineering</title>
+		<author>
+			<persName><forename type="first">Luca</forename><surname>Carlos F Guimarães</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexandra</forename><forename type="middle">P</forename><surname>Gasperini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui L</forename><surname>Marques</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Reis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nature Reviews Materials</title>
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page" from="351" to="370" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Embodied intelligence via learning and evolution</title>
+		<author>
+			<persName><forename type="first">Agrim</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Silvio</forename><surname>Savarese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Surya</forename><surname>Ganguli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Fei-Fei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nature Communications</title>
+		<imprint>
+			<biblScope unit="volume">12</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="1" to="12" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Learning universal controllers with transformers</title>
+		<author>
+			<persName><forename type="first">Agrim</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linxi</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Surya</forename><surname>Ganguli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Fei-Fei</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Metamorph</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Conference on Learning Representations (ICLR)</title>
+		<meeting>the International Conference on Learning Representations (ICLR)</meeting>
+		<imprint>
+			<biblScope unit="page">2022</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Completely derandomized self-adaptation in evolution strategies</title>
+		<author>
+			<persName><forename type="first">Nikolaus</forename><surname>Hansen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andreas</forename><surname>Ostermeier</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Evolutionary Computation</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="159" to="195" />
+			<date type="published" when="2001">2001</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Task-agnostic morphology evolution</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Donald</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Hejna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lerrel</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Pinto</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Conference on Learning Representations (ICLR)</title>
+		<meeting>the International Conference on Learning Representations (ICLR)</meeting>
+		<imprint>
+			<biblScope unit="page">2021</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Evolving amorphous robots</title>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Hiller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hod</forename><surname>Lipson</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Conference on Artificial Life (ALife)</title>
+		<meeting>the Conference on Artificial Life (ALife)</meeting>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="page" from="717" to="724" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Automatic design and manufacture of soft robots</title>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Hiller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hod</forename><surname>Lipson</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Robotics</title>
+		<imprint>
+			<biblScope unit="volume">28</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="457" to="466" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Dynamic simulation of soft multimaterial 3D-printed objects</title>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Hiller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hod</forename><surname>Lipson</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Soft Robotics</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="88" to="101" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">GLSO: Grammar-guided latent space optimization for sample-efficient robot design automation</title>
+		<author>
+			<persName><forename type="first">Jiaheng</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Whitman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Howie</forename><surname>Choset</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Conference on Robot Learning (CoRL)</title>
+		<meeting>the Conference on Robot Learning (CoRL)</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="1321" to="1331" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Dittogym: Learning to control soft shape-shifting robots</title>
+		<author>
+			<persName><forename type="first">Suning</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyuan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huazhe</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>Sitzmann</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Conference on Learning Representations (ICLR)</title>
+		<meeting>the International Conference on Learning Representations (ICLR)</meeting>
+		<imprint>
+			<biblScope unit="page">2024</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Noise and the reality gap: The use of simulation in evolutionary robotics</title>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Jakobi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Phil</forename><surname>Husbands</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Inman</forename><surname>Harvey</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the European Conference on Artificial Life (ECAL)</title>
+		<meeting>the European Conference on Artificial Life (ECAL)</meeting>
+		<imprint>
+			<date type="published" when="1995">1995</date>
+			<biblScope unit="page" from="704" to="720" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Combining deformable-and rigid-body mechanics simulation</title>
+		<author>
+			<persName><forename type="first">Johan</forename><surname>Jansson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">M</forename><surname>Joris</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Vergeest</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The Visual Computer</title>
+		<imprint>
+			<biblScope unit="volume">19</biblScope>
+			<biblScope unit="page" from="280" to="290" />
+			<date type="published" when="2003">2003</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Fast simulation of skeleton-driven deformable body characters</title>
+		<author>
+			<persName><forename type="first">Junggon</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nancy</forename><forename type="middle">S</forename><surname>Pollard</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Transactions on Graphics (TOG)</title>
+		<imprint>
+			<biblScope unit="volume">30</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page" from="1" to="19" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Auto-encoding variational bayes</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Diederik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Max</forename><surname>Kingma</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Welling</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1312.6114</idno>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">A scalable pipeline for designing reconfigurable organisms</title>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Kriegman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Douglas</forename><surname>Blackiston</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Levin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Bongard</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Proceedings of the National Academy of Sciences</title>
+		<imprint>
+			<biblScope unit="volume">117</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="1853" to="1859" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Scalable sim-to-real transfer of soft robot designs</title>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Kriegman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammadi</forename><surname>Amir</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dylan</forename><surname>Nasab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannah</forename><surname>Shah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabrielle</forename><surname>Steele</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Branin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Levin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rebecca</forename><surname>Bongard</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Kramer-Bottiglio</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Conference on Soft Robotics (RoboSoft)</title>
+		<meeting>the International Conference on Soft Robotics (RoboSoft)</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="359" to="366" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Kinematic self-replication in reconfigurable organisms</title>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Kriegman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Douglas</forename><surname>Blackiston</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Levin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Bongard</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Proceedings of the National Academy of Sciences</title>
+		<imprint>
+			<biblScope unit="volume">118</biblScope>
+			<biblScope unit="issue">49</biblScope>
+			<date type="published" when="2021">2112672118. 2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Soft articulated characters in projective dynamics</title>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tiantian</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ladislav</forename><surname>Kavan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Visualization and Computer Graphics</title>
+		<imprint>
+			<biblScope unit="volume">28</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="1385" to="1396" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Reinforcement learning for freeform robot design</title>
+		<author>
+			<persName><forename type="first">Muhan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Matthews</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Kriegman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Conference on Robotics and Automation (ICRA)</title>
+		<meeting>the International Conference on Robotics and Automation (ICRA)</meeting>
+		<imprint>
+			<biblScope unit="page">2024</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Automatic design and manufacture of robotic lifeforms</title>
+		<author>
+			<persName><forename type="first">Hod</forename><surname>Lipson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jordan</forename><forename type="middle">B</forename><surname>Pollack</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nature</title>
+		<imprint>
+			<biblScope unit="volume">406</biblScope>
+			<biblScope unit="issue">6799</biblScope>
+			<biblScope unit="page">974</biblScope>
+			<date type="published" when="2000">2000</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Plan online, learn offline: Efficient learning and exploration via model-based control</title>
+		<author>
+			<persName><forename type="first">Kendall</forename><surname>Lowrey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aravind</forename><surname>Rajeswaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sham</forename><surname>Kakade</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emanuel</forename><surname>Todorov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Mordatch</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Conference on Learning Representations (ICLR)</title>
+		<meeting>the International Conference on Learning Representations (ICLR)</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Efficient automatic design of robots</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Matthews</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Spielberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniela</forename><surname>Rus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Kriegman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Bongard</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Proceedings of the National Academy of Sciences</title>
+		<imprint>
+			<biblScope unit="volume">120</biblScope>
+			<biblScope unit="issue">41</biblScope>
+			<biblScope unit="page">2305180120</biblScope>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Convolutional occupancy networks</title>
+		<author>
+			<persName><forename type="first">Songyou</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Niemeyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lars</forename><surname>Mescheder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Pollefeys</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andreas</forename><surname>Geiger</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the European Conference on Computer Vision (ECCV)</title>
+		<meeting>the European Conference on Computer Vision (ECCV)</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="523" to="540" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<monogr>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Filip</forename><surname>Wolski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oleg</forename><surname>Klimov</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1707.06347</idno>
+		<title level="m">Proximal policy optimization algorithms</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Masked label prediction: Unified message passing model for semi-supervised classification</title>
+		<author>
+			<persName><forename type="first">Yunsheng</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengjie</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shikun</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenjing</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Sun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Joint Conference on Artificial Intelligence (IJCAI)</title>
+		<meeting>the International Joint Conference on Artificial Intelligence (IJCAI)</meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="1548" to="1554" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Two-way coupling of rigid and deformable bodies</title>
+		<author>
+			<persName><forename type="first">Tamar</forename><surname>Shinar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Craig</forename><surname>Schroeder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ronald</forename><surname>Fedkiw</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Symposium on Computer Animation (SCA)</title>
+		<meeting>the Symposium on Computer Animation (SCA)</meeting>
+		<imprint>
+			<date type="published" when="2008">2008</date>
+			<biblScope unit="page" from="95" to="103" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Evolving 3D morphology and behavior by competition</title>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Sims</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Artificial Life</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="353" to="372" />
+			<date type="published" when="1994">1994</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Compositional pattern producing networks: A novel abstraction of development</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Kenneth</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Stanley</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Genetic Programming and Evolvable Machines</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="page" from="131" to="162" />
+			<date type="published" when="2007">2007</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Evolution and learning in differentiable robots</title>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Strgar</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">RSS</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Matthews</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">RSS</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">Tyler</forename><surname>Hummer</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">RSS</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Kriegman</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">RSS</orgName>
+			</affiliation>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Robotics: Science and Systems</title>
+		<imprint>
+			<biblScope unit="page">2024</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Explorations in the emergence of morphology and locomotion behavior in animated characters</title>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Ventrella</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Workshop on the Synthesis and Simulation of Living Systems (ALife)</title>
+		<meeting>the International Workshop on the Synthesis and Simulation of Living Systems (ALife)</meeting>
+		<imprint>
+			<date type="published" when="1994">1994</date>
+			<biblScope unit="page" from="436" to="441" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Softzoo: A soft robot co-design benchmark for locomotion in diverse environments</title>
+		<author>
+			<persName><forename type="first">Tsun-Hsuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pingchuan</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">E</forename><surname>Spielberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhou Xian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">B</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniela</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuang</forename><surname>Rus</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Conference on Learning Representations</title>
+		<meeting>the International Conference on Learning Representations</meeting>
+		<imprint>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Diffusebot: Breeding soft robots with physics-augmented generative diffusion models</title>
+		<author>
+			<persName><forename type="first">Tsun-Hsuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juntian</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pingchuan</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Byungchul</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">E</forename><surname>Spielberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuang</forename><surname>Gan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniela</forename><surname>Rus</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems (NeurIPS)</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>b</note>
+</biblStruct>
+
+<biblStruct xml:id="b42">
+	<analytic>
+		<title level="a" type="main">On the function of muscle and reflex partitioning</title>
+		<author>
+			<persName><forename type="first">Uwe</forename><surname>Windhorst</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><forename type="middle">M</forename><surname>Hamm</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Douglas</forename><forename type="middle">G</forename><surname>Stuart</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Behavioral and Brain Sciences</title>
+		<imprint>
+			<biblScope unit="volume">12</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="629" to="645" />
+			<date type="published" when="1989">1989</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Transform2Act: Learning a transform-and-control policy for efficient agent design</title>
+		<author>
+			<persName><forename type="first">Ye</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuda</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengyi</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kris</forename><surname>Kitani</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Conference on Learning Representations (ICLR)</title>
+		<meeting>the International Conference on Learning Representations (ICLR)</meeting>
+		<imprint>
+			<biblScope unit="page">2022</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Graph transformer networks</title>
+		<author>
+			<persName><forename type="first">Seongjun</forename><surname>Yun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minbyul</forename><surname>Jeong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raehyun</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaewoo</forename><surname>Kang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyunwoo J</forename><surname>Kim</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems (NeurIPS)</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="volume">32</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b45">
+	<analytic>
+		<title level="a" type="main">RoboGrammar: Graph grammar for terrain-optimized robot design</title>
+		<author>
+			<persName><forename type="first">Allan</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mina</forename><surname>Konaković-Luković</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Josephine</forename><surname>Hughes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Spielberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniela</forename><surname>Rus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wojciech</forename><surname>Matusik</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Transactions on Graphics (TOG)</title>
+		<imprint>
+			<biblScope unit="volume">39</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="1" to="16" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

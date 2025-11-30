@@ -1,0 +1,1491 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">FENGBO: A CLIFFORD NEURAL OPERATOR PIPELINE FOR 3D PDES IN COMPUTATIONAL FLUID DYNAMICS</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Alberto</forename><surname>Pepe</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Engineering</orgName>
+								<orgName type="laboratory">Signal Processing and Communications Lab</orgName>
+								<orgName type="institution">University of Cambridge</orgName>
+								<address>
+									<addrLine>Trumpington Street</addrLine>
+									<postCode>CB2 1PZ</postCode>
+									<settlement>Cambridge</settlement>
+									<country key="GB">UK</country>
+								</address>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="laboratory">Intelligent Cloud Technologies Laboratory Huawei Research Center Germany</orgName>
+								<address>
+									<addrLine>Riesstraße 25</addrLine>
+									<postCode>80992</postCode>
+									<settlement>München</settlement>
+									<country>Austria, Germany</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Joan</forename><surname>Lasenby</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Engineering</orgName>
+								<orgName type="laboratory">Signal Processing and Communications Lab</orgName>
+								<orgName type="institution">University of Cambridge</orgName>
+								<address>
+									<addrLine>Trumpington Street</addrLine>
+									<postCode>CB2 1PZ</postCode>
+									<settlement>Cambridge</settlement>
+									<country key="GB">UK</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Mattia</forename><surname>Montanari</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="department">Impact Engineering Laboratory Department of Engineering Science</orgName>
+								<orgName type="institution">University of Oxford</orgName>
+								<address>
+									<addrLine>Parks Road</addrLine>
+									<postCode>OX1 3PJ</postCode>
+									<settlement>Oxford</settlement>
+									<country key="GB">UK</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">FENGBO: A CLIFFORD NEURAL OPERATOR PIPELINE FOR 3D PDES IN COMPUTATIONAL FLUID DYNAMICS</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">8EA08F2240FCF9C9AE9205AFCFFEC74D</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2025-11-30T00:15+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>We introduce Fengbo, a pipeline entirely in Clifford Algebra to solve 3D partial differential equations (PDEs) specifically for computational fluid dynamics (CFD). Fengbo is an architecture composed of only 3D convolutional and Fourier Neural Operator (FNO) layers, all working in 3D Clifford Algebra. It models the PDE solution problem as an interpretable mapping from the geometry to the physics of the problem. Despite having just few layers, Fengbo achieves competitive accuracy, superior to 5 out of 6 proposed models reported in <ref type="bibr" target="#b27">Li et al. (2024)</ref> for the ShapeNet Car dataset, and it does so with only 42 million trainable parameters, at a reduced computational complexity compared to graph-based methods, and estimating jointly pressure and velocity fields. In addition, the output of each layer in Fengbo can be clearly visualised as objects and physical quantities in 3D space, making it a whitebox model. By leveraging Clifford Algebra and establishing a direct mapping from the geometry to the physics of the PDEs, Fengbo provides an efficient, geometry-and physics-aware approach to solving complex PDEs.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">INTRODUCTION</head><p>Many natural phenomena and complex systems, including electromagnetism and seismic waves, are governed by partial differential equations (PDEs). Solving these PDEs enables the prediction of a system's state evolution over time, which is valuable in applications such as stock price estimation and weather forecasting. While PDEs often provide precise models of these systems, they are typically too complex to solve analytically. Numerical methods, such as finite element analysis (FEA) and finite difference methods (FDM), are some of the well-established techniques for approximating solutions in complex geometries and handling boundary conditions <ref type="bibr" target="#b36">Perrone &amp; Kao (1975)</ref>; <ref type="bibr" target="#b29">Liszka &amp; Orkisz (1980)</ref>; <ref type="bibr" target="#b9">Friswell &amp; Mottershead (1995)</ref>. However, these methods require significant computational resources, particularly when high-resolution solutions are needed.</p><p>In the past decade, machine learning (ML) methods have been applied to solve PDEs <ref type="bibr" target="#b5">Carleo et al. (2019)</ref>; <ref type="bibr" target="#b51">Willard et al. (2020)</ref>; <ref type="bibr" target="#b15">Karniadakis et al. (2021)</ref>. ML-based methods can be several orders of magnitude faster than traditional numerical approaches, enabling rapid simulations while maintaining acceptable accuracy. This is particularly useful for applications requiring real-time predictions, such as weather forecasting and fluid dynamics simulations. Most ML approaches blend physical laws with large datasets to efficiently approximate PDE solutions, significantly reducing computational costs. Neural operators, in particular, have gained attention as a novel approach to solving PDEs <ref type="bibr">Li et al. (2020b;</ref><ref type="bibr">a)</ref>; <ref type="bibr" target="#b18">Kovachki et al. (2023)</ref>. They extend the idea of neural networks by learning mappings between function spaces, rather than finite-dimensional vectors. Unlike conventional neural networks, which approximate specific solutions, Neural Operators aim to approximate the underlying operator of a PDE, allowing for generalization across different input conditions and configurations, making them highly efficient at solving PDEs.</p><p>Fengbo. This paper introduces a Neural Operator pipeline for computational fluid dynamics (CFD) cast entirely in Clifford Algebra. Named after the Taoist deity of the wind, Fengbo leverages the embedding of data within an algebra of choice in the form of multivectors, which are the fundamental objects in Clifford Algebra, to integrate physics and geometry data throughout the architecture. Its operators, layers and neurons are all expressed as multivectors in Clifford Algebra.</p><p>Multivectors are a linear combination of objects, e.g. points, vectors, and planes, which can be employed to represent geometrical shapes but also physical quantities (e.g. pressure and velocity fields). This representation allows for an expressive and flexible encoding of complex relationships, ultimately leading to a strong inductive bias to the neural network. This bias preserves geometric relationships between different quantities, can ensure equivariance under transformations <ref type="bibr" target="#b46">Ruhe et al. (2024)</ref>; <ref type="bibr">Pepe et al. (2024a)</ref>, and allows for more descriptive models <ref type="bibr" target="#b3">Brandstetter et al. (2022)</ref>; <ref type="bibr">Pepe et al. (2024c)</ref>. As a result, we can achieve high performance using far fewer parameters compared to conventional models.  Fengbo has three main components: (i) 3D Clifford Geometry block(s): one for each input geometry in the dataset, to mix elements of different grades in multivectors with geometrical meaning. (ii) 3D Clifford Fourier Neural Operator (FNO): to capture global interactions and map multivectors from the geometry to the physics domain. We extend their implementation in <ref type="bibr" target="#b3">Brandstetter et al. (2022)</ref> to process full-grade 3D multivectors as opposed to only vector and bivector components. (iii) 3D Clifford Physics block(s): Similar to (i), but for multivectors with physical meaning. There is one Physics block for each output physical quantity to estimate in the dataset.</p><p>We tested Fengbo on the two available 3D computational fluid dynamics (CFD) datasets generated and analysed in <ref type="bibr" target="#b27">Li et al. (2024)</ref>. Fengbo takes input multivectors representing the shape of the vehicles and estimates the pressure field on their surfaces as well as the velocity field defined over the domain. It does so with fewer than half the parameters required by the GINO architecture <ref type="bibr" target="#b27">(Li et al. (2024)</ref>) and by directly processing the geometries employed in CFD. Since every intermediate output in Fengbo is a multivector with geometrical or physical meaning, Fengbo is a whitebox model that allows for a clearer understanding of how data are processed and transformed from geometry to physics.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">RELATED WORK</head><p>Learning methods in PDE modelling. A key challenge in applying machine learning (ML) to PDEs is ensuring that the model does not simply perform pattern recognition. Instead, the objective is for the model to capture the underlying physical principles governing the PDEs and accurately represent the geometry of the domain in which these equations are defined. Consequently, most models designed for PDEs are designed to address these requirements.</p><p>Physics-Informed Neural Networks (PINNs) <ref type="bibr" target="#b40">Raissi et al. (2017;</ref><ref type="bibr">2019)</ref>; <ref type="bibr" target="#b6">Cuomo et al. (2022)</ref>, for example, do so by incorporate the governing PDEs into the neural network training process and learn directly from them. This integration helps ensure that the solutions respect physical constraints and produce realistic outcomes, addressing the limitation of simpler ML models that might fail to generalise on unseen data. However, PINNs are limited to a specific PDE and often require an additional Graph Network for spatial generalisation.</p><p>A similar philosophy is found in solver-in-the-loop methods <ref type="bibr" target="#b49">Um et al. (2020)</ref>; <ref type="bibr" target="#b2">Brahmachary &amp; Thuerey (2024)</ref>; <ref type="bibr" target="#b28">Lippe et al. (2024)</ref>. These hybrid methods combine an ML architecture with a relatively simple numerical solver. The numerical solver helps to refine the predictions of the ML model, ensuring that the solutions remain grounded in the physical constraints of the problem. Deep Galerkin Method (DGM) algorithms <ref type="bibr" target="#b48">Sirignano &amp; Spiliopoulos (2018)</ref>  <ref type="bibr" target="#b52">Wu et al. (2024)</ref>. Attention layers, especially when tailored to PDEs, offer a significant accuracy boost while keeping the model size small. The major drawback of Transformers is their computational complexity, generally O(N 2 ). Several attempts have been made in order to reduce the computational cost of such models, most notably the Galerkin Transformer <ref type="bibr" target="#b4">Cao (2021)</ref>, which reduces the cost of the quadratic Fourier-attention from O(N 2 d) down to O(N d 2 ), with d the dimensionality of feature space, and the Transolver <ref type="bibr" target="#b52">Wu et al. (2024)</ref>, that introduces the Physics-Attention layer to learn over slices of the domain Ω D , with complexity of O(f (N ; θ)), with f being a function linear in N with dependence on the model parameters θ. Given the significant computational complexity of Transformer models, we regard them as a distinct category and instead focus our analysis on Neural Operators, of which Fengbo is an example. To justify our choice, a discussion on computational complexity of such models and their comparison to Fengbo is provided in Appendix E.</p><p>Neural operators have recently emerged as a key architecture to tackle the problem of PDE modelling <ref type="bibr">Li et al. (2020a;</ref><ref type="bibr">b)</ref>; <ref type="bibr" target="#b30">Lütjens et al. (2022)</ref>; <ref type="bibr" target="#b42">Raonic et al. (2024)</ref>; <ref type="bibr" target="#b1">Azizzadenesheli et al. (2024)</ref>. Neural operators differ from neural networks since they learn mappings between function spaces, or domains, instead of being function approximators like neural networks. When tackling PDEs, Neural Operators learn a mapping from input functions, which represent the initial or boundary conditions, to output functions, which represent the solution to the PDEs. They come come in several versions: Fourier Neural Operators, for example, operate in the frequency domain, where convolutions are more efficient at capturing long-range dependencies and periodic patterns in the data <ref type="bibr">Li et al. (2020a;</ref><ref type="bibr">2023;</ref><ref type="bibr">2024)</ref>, but Convolutional, Laplace and Graph Neural Operators have also been reported in the literature to address specific problem requirements. <ref type="bibr">GINO Li et al. (2024)</ref>, for example, is a pipeline combining a Graph Neural Operator, that handles irregular shapes and maps them onto a regular grid in latent space, and a Fourier Neural Operator, that processes the transformed input in latent space, that achieves state-of-the-art performance on large scale 3D PDEs.</p><p>Hybrid methods that combine Neural Operators and Transformers also exist, such as a the general Neural Operator Transformer in <ref type="bibr" target="#b12">Hao et al. (2023)</ref>, which introduces the heterogeneous normalized attention and the geometric gating mechanism for 2D PDEs. Such methods, however, are complex and up to ×4 times larger than most Transformer-based models as shown in <ref type="bibr" target="#b52">Wu et al. (2024)</ref>.</p><p>Clifford Algebra Networks. Clifford Algebra introduces multivectors to extend linear algebra into a framework designed to couple multidimensional data and geometric transformations. Clifford Algebra has been shown to be a valuable resource in several fields, including physics, computer vision and computer graphics <ref type="bibr">Lasenby &amp; Lasenby (2001)</ref>; <ref type="bibr" target="#b19">Lasenby &amp; Doran (2001)</ref>; <ref type="bibr" target="#b8">Doran &amp; Lasenby (2003)</ref>; <ref type="bibr">Dorst &amp; Lasenby (2011)</ref>. We present a brief overview of Clifford Algebra we use in this paper in Appendix A. Clifford Algebra Networks are architectures that work with multivector-valued inputs, outputs, weights and biases, and that can perform geometric transformations in Clifford Algebra. The renewed interest in this type of networks arose precisely due to their potential in PDE modelling, but they have demonstrated promising results in several other fields, including computer vision and bioinformatics <ref type="bibr" target="#b3">Brandstetter et al. (2022)</ref>; <ref type="bibr" target="#b44">Roy et al. (2024)</ref>; <ref type="bibr" target="#b46">Ruhe et al. (2024)</ref>; <ref type="bibr">Pepe et al. (2024d;</ref><ref type="bibr">a;</ref><ref type="bibr">c;</ref><ref type="bibr">b)</ref>; <ref type="bibr">Hockey et al. (2024)</ref>. By encoding the geometry and physical properties directly into the algebra, they can represent and solve PDEs by capturing the relationships between variables in a geometrically meaningful way. This approach allows for smaller yet more expressive and descriptive models that can better generalise the PDEs solution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">METHOD</head><p>Notation. Unless stated otherwise, we will employ lowercase Latin letters for scalar quantities (e.g. p 1 , v 1 ), boldface Latin letters for vectors (e.g. x, n, p, v), uppercase Latin letters for multivectors (e.g. P, V, Q, B, W ) or integers (e.g. K, N, M, C), lowercase Greek letters for real-valued maps (e.g. ϕ, ψ) and uppercase, boldface Greek letters for multivector-valued maps (e.g. Φ, Ξ). We use a dash symbol to distinguish multivectors describing geometrical quantities from those describing physical ones (e.g. P, P ′ ).</p><p>Navier-Stokes equations. The Navier-Stokes equations describe the motion of fluids. They read as follows:</p><formula xml:id="formula_0">∂ρ ∂t + ∇ • (ρψ) = 0<label>(1)</label></formula><p>Eq. 1 represents the conservation of mass in a fluid flow. It states that the time derivative of the fluid density ρ plus the divergence of the mass flux ρψ must be zero. Here ψ represent the fluid velocity. This ensures that mass is conserved within the fluid domain.</p><formula xml:id="formula_1">ρ ∂ψ ∂t + ρ(ψ • ∇)ψ = -∇ϕ + µ∇ 2 ψ + f (2)</formula><p>Eq. 2 describes the conservation of momentum. It accounts for: the time rate of change of momentum ρ ∂ψ ∂t , the convective term ρ(ψ • ∇)ψ which represents the transport of momentum due to the fluid's velocity, the pressure gradient force -∇ϕ, the viscous forces µ∇ 2 ψ which resist the flow of the fluid, and external forces f applied to the fluid. Here µ is the dynamic viscosity of the fluid and ϕ is the pressure. As in many CFD applications, Eq. 2 can be simplified by assuming that the fluid is incompressible and no forcing terms are present. We shall restrict this work to the steady state model, in which partial derivatives in time are null.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">ARCHITECTURE</head><p>The Fengbo architecture, shown in Fig. <ref type="figure" target="#fig_0">1</ref>, is an architecture that maps the geometry of the domain of the PDEs onto their solution. Specifically, we are interested in estimating jointly the scalar pressure field ϕ(x) : Ω D ⊂ R 3 → R and in the vector velocity field ψ(x) : Ω D ⊂ R 3 → R 3 that satisfy Eq. 1-2 over an irregular domain Ω D . We do as follows:</p><p>Voxelisation of the fluid domain. To deal with an irregular domain we need to support unstructured meshes which are commonly used in CFD. We do so by generating a regular grid of M × M × M voxels inside the fluid domain D. In general the voxels do not fit the boundary and the discretization parameter M should be sufficiently large to capture a good level of geometric details. Our domain is a discrete volume of 3D space throughout, a simpler alternative to embedding in latent space or the use of a graph representation of data.</p><p>Clifford Algebra embedding. We fill in each voxel i, j, k ∈ D with a multivector P : D → G(3, 0, 0) (see Appendix A for notation), in which D ⊂ R 3 represents the discrete grid of voxels in which the multivector field is defined and G(3, 0, 0) is the 3D Clifford Algebra. We call P ijk the multivector associated with the voxel specified by indexes i, j, k. We construct multivectors P to have a scalar component m p , a vector component p and a bivector component B. • The scalar part is a binary mask m p , included to inform the network about which voxels are filled and avoid ambiguity between the origin and empty voxels in the vector part, since for both we have that p 1 = p 2 = p 3 = 0.</p><p>• The vector part p represents the N -point point cloud p ∈ R 3 of coordinates in 3D space and it encodes information about the shape or contour of the object.</p><p>• The bivector B represents the plane orthogonal to the normal n defined for each point in p. In other words, B is the dual of n, i.e. B = I 3 n, in which n is the normal vector perpendicular to the mesh points on the car surface and</p><formula xml:id="formula_2">I 3 = e 1 ∧ e 2 ∧ e 3 is the G(3, 0, 0) pseudoscalar.</formula><p>B is an oriented plane and hence it can be interpreted as containing information about the surface of the object.</p><p>• The trivector component is left blank.</p><p>Since the output pressure field ϕ(x) is defined at each point p, we call P the pressure geometry multivector. An example of a pressure geometry multivector is given in Fig. <ref type="figure" target="#fig_2">2</ref>. The general form of the pressure geometry multivector is: For datasets that include other physical fields, we define other input multivectors. For example, if the velocity vector field v is known, we construct a corresponding multivector V . The multivector V : D → G(3, 0, 0) is also defined over a regular grid of voxels. We construct V to have a scalar component m v and a vector component v. The vector component v corresponds to the K-point point clouds v ∈ R 3 , with K ≫ N , defined for points surrounding the car surface, and m v is its corresponding binary mask defined similarly to m p . Since the output velocity field ψ(x) is defined over each point of v, we call V the velocity geometry multivector. Each velocity geometry multivector V is of the form:</p><formula xml:id="formula_3">P = m p + p + B =</formula><formula xml:id="formula_4">V = m v + v = m v scalar + v 1 e 1 + v 2 e 2 + v 3 e 3 vector (<label>4</label></formula><formula xml:id="formula_5">)</formula><p>in which, similarly to P ,</p><p>• The scalar part is a binary mask m v .</p><p>• The vector part v represents the N -point point cloud v ∈ R 3 of coordinates in 3D space over which the velocity field is defined.</p><p>• The bivector and trivector components are left blank.</p><p>An example of V is shown in Fig. <ref type="figure" target="#fig_4">3</ref>. The geometry multivectors P and V are representative of the geometry simply because they are themselves the geometry of the PDEs domain.</p><p>3D Clifford Geometry block. We define the 3D Clifford Geometry block to be the module acting on volumes of multivectors with a sequence of three 3D convolutional layers in Clifford Algebra. In Clifford Algebra Networks, weights and biases are multivectors W, D ∈ G(3, 0, 0), and convolutions are performed via geometric products:</p><formula xml:id="formula_6">Q (cout) ijk = C cin=1 l m n P (cin) i+l,j+m,k+n W (cin,cout) ijk + D (cout) ijk (5)</formula><p>where the range of the summation of l, m, n is specified by the kernel size and c in , c out are the input and output channels, respectively. The 3D Clifford Geometry block takes in input a single geometry multivector (e.g. P , V ) and it outputs C channels of multivectors. It serves four purposes:</p><p>• grade mixing: multivectors P , V in input to it only contains elements of a certain grade.</p><p>Convolutional layers allow grades to mix and have full multivectors in 3D Clifford Algebra (i.e. with scalars up to trivector components). • capturing local interactions: convolutions are traditionally used to extract feature from data which are close to each other in space. • filling up the volume: fitting an irregular grid into a regular one requires a high-resolution grid, meaning that most of the initial input volume is sparse. Convolutions with a large enough kernel avoid this issue by filling up the volume. • increasing the number of channels in input to the Clifford FNO block.</p><p>We refer to the output of the geometry block processing the shape over which the pressure field is defined (i.e. the pressure multivector P ) as Q P and to the output of the geometry block processing the shape over which the velocity field is defined (i.e. the velocity multivector V ) as Q V .</p><p>Clifford FNO block. The 3D Fourier Neural Operator (FNO) in Clifford Algebra learns a multivector valued function Φ(Q) : G(3, 0, 0) → G(3, 0, 0) described by the 3D Clifford convolution theorem of <ref type="bibr" target="#b3">Brandstetter et al. (2022)</ref>:</p><formula xml:id="formula_7">Q ′ = Φ(Q) = F -1 {F{Q}(ξ) • F {k a }(-ξ)},<label>(6)</label></formula><p>in which k a : R 3 → G(3, 0, 0) is the learnable filter of the FNO and F and F -1 are the Fourier and inverse Fourier transforms, respectively, with the Fourier transform in G(3, 0, 0) applied pointwise over each real coefficient of Q and defined as:</p><formula xml:id="formula_8">Q(ξ) = F{Q}(ξ) = Q0 + Q1 e 1 + Q2 e 2 + Q3 e 3 + Q12 e 12 + Q13 e 13 + Q23 e 23 + Q123 e 123 . (<label>7</label></formula><formula xml:id="formula_9">)</formula><p>Q is defined as the sum of all the multivectors in output of the Geometry blocks. The codomain of Φ(Q) is also multivector valued, and each multivector in output of the 3D Clifford FNO, which we refer to Q ′ , is defined on a grid with the same resolution M of the inputs. The FNO captures global interactions within the geometry and maps the input multivectors from a geometrical to a physics domain.</p><p>3D Clifford Physics block. The 3D Clifford Physics block is analogous to its Geometry counterpart. It differs from it since brings the C channels of multivector Q ′ in output of the FNO down to 1. As we estimate two different quantities, we have two different blocks to output P ′ and V ′ , the pressure physics multivector and velocity physics multivector, respectively, for which we set </p><formula xml:id="formula_10">⟨P ′ ⟩ 0 = ϕ (8)</formula><formula xml:id="formula_11">Q = {Qi} Ng i=1 local, upsample, grade mixing 2. 3D Clifford FNO Q = Ng i=1 Qi Q ′ global, PDE modelling 3. 3D Clifford Physics blocks Q ′ P ′ = {P ′ i } Np i=1</formula><p>local, downsample, grade mixing</p><formula xml:id="formula_12">⟨V ′ ⟩ 1 = ψ 1 e 1 + ψ 2 e 2 + ψ 3 e 3 (<label>9</label></formula><formula xml:id="formula_13">)</formula><p>where ⟨•⟩ k is the grade projector operator, which extracts the k-grade element out of the multivector.</p><p>In short, Fengbo models the PDE solution problem as a mapping Ξ(•) of 3D (geometry) multivectors onto 3D (physics) multivectors in 3D Clifford Algebra G(3, 0, 0), i.e.</p><formula xml:id="formula_14">P ′ = Ξ(P) (10) in which P = {P i } Ng i=1</formula><p>, with N g the number of input geometries in the dataset, and</p><formula xml:id="formula_15">P ′ = {P ′ i } Np i=1</formula><p>, with N p the number of output physical quantities to estimate. N g and N p determine the number of Geometry and Physics blocks in Fengbo, respectively. The steps in the Fengbo architecture are summarised in Table <ref type="table" target="#tab_1">1</ref>. Additional insight on each block is provided in Appendix B.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">EXPERIMENTS</head><p>4.1 DATASETS ShapeNet Car. The ShapeNet Car dataset is a subset of the larger ShapeNet 3D model repository consisting of thousands of realistic 3D car models employed in a CFD simulation with constant inlet flow velocity. It contains 500 shapes for training and 111 for testing. For this dataset, N g = 2, N p = 2, i.e. P = {P, V } (two inputs geometries) and P ′ = {P ′ , V ′ } (two physical quantities to estimate, defined over the two different geometries). Ahmed Body. The Ahmed Body dataset consists of CFD simulations with varying inlet flow velocity ψ in . It contains 500 parametric variations of CFD simulations over simplified car models for training and 51 for testing. For this dataset, N g = 1, N p = 1, i.e. P = {P } (a single input geometry) and P ′ = {P ′ } (one physical quantity to estimate, no velocity field information provided). The inlet velocity is a crucial component since the output pressure field range depends on it. We embedded it as the trivector component of P since it has a single component in one direction, i.e. ψ in e 1 + 0e 2 + 0e 3 . We do so by setting ⟨P ⟩ 3 = (m p ψ in )e 123 , in which m p is the binary mask.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">METRICS</head><p>We assess the quality of the pressure and velocity fields estimation through relative L2 norm (a percentage), defined as:</p><formula xml:id="formula_16">L P = ∥⟨P ′ GT ⟩ 0 -⟨P ′ ⟩ 0 ∥ 2 ∥⟨P ′ GT ⟩ 0 ∥ 2 = ∥ϕ(x) -φ(x)∥ 2 ∥ϕ(x)∥ 2 (11) L V = ∥⟨V ′ GT ⟩ 1 -⟨V ′ ⟩ 1 ∥ 2 ∥⟨V ′ GT ⟩ 1 ∥ 2 = ∥ψ(x) -ψ(x)∥ 2 ∥ψ(x)∥ 2 (12)</formula><p>in which φ, ψ represent estimated pressure and velocity fields via Fengbo, extracted as the grade-0 and grade-1 component of estimated physics multivectors P ′ , V ′ , respectively, while ϕ, ψ represent ground truth fields, extracted as the grade-0 and grade-1 component of ground truth physics multivectors P ′ GT , V ′ GT , respectively. The relative L2 norm has also been employed as loss function during training. Training details are discussed in detail in Appendix C. Code scripts can be found here, while trained model weights are available upon request.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">RESULTS</head><p>Results are summarised in Tables 2-3 for the ShapeNet Car and the Ahmed Body datasets, respectively. Fengbo outperforms all variants of vanilla Fourier and Graph Neural Operators, as well as   UNet and Mesh GraphNet, and it yields comparable results to GINO. For the ShapeNet Car dataset, for example, Fengbo is able to estimate the pressure field with a 0.6% lower relative L2 norm compared to the GINO in its encoder-decoder (e-d) configuration, but with a 1.6% higher error compared to its decoder-only (e) configuration. Fengbo does so, however, with 60% fewer trainable parameters, with a reduced computational cost which does not depend on the degree of a graph representation of the input data, and being the only architecture reported able to do so while jointly estimating the scalar pressure field and the 3D velocity vector field. Fengbo achieves competitive accuracy thanks to this coupling of physical quantities, which allows to do so through simple convolutions on coarsely discretised meshes. This is especially notable when compared to more sophisticated architectures, including Geo-FNO Li et al. ( <ref type="formula">2023</ref>   Interestingly, estimating the velocity vector field appears to be an easier task to tackle. This is likely due to the significantly smaller variance of the velocity data as opposed to the sharp pressure variation over the car surface, as well as the fact that the velocity field ψ(x) is defined over a point cloud containing 10× more points as opposed to ϕ(x). This is mirrored also in the smaller gap between training and testing errors. The additional estimation of the velocity vector field does not imply a computational overhead, since the vector and pressure fields exist naturally within the multivector-based formulation of the problem and they are both embedded in a fixed-size volume.</p><p>Note that this would not apply to graph-based methods, in which a larger cell count would mean a larger number of nodes, increasing drastically the computational complexity (see Table <ref type="table" target="#tab_4">4</ref>).</p><p>Similar observations can be made for the Ahmed Body dataset. Fengbo outperforms all models reported, with the exception of some GINO configurations depending on the choice of the radius of the Graph Neural Operator module. It is worth mentioning that experiments in Li et al. ( <ref type="formula">2024</ref>) could benefit from the joint estimate of the wall shear stress, a physical parameter which was missing in the version of the dataset we employed. We are positive that regressing also on wall shear stress in a joint fashion, just like pressure and velocity for ShapeNet Car, could bring down the error of 10.7% we obtained on the test set with Fengbo. Note also how Fengbo attains a training error of just 8%, the lowest out of every other model reported, indicating how additional parameter optimisation could be performed and likely reduce overfitting to bring the error down even further.</p><p>Comparison of estimates with Fengbo and corresponding ground truth pressure fields are given in Figs 4 and in Fig. <ref type="figure" target="#fig_8">6</ref> for the ShapeNet Car and Ahmed Body datasets, respectively. Note how errors in the pressure field are generally isolated points in a more or less uniform region with relative error close to zero. We are convinced that by simply smoothing the predicted field we could mitigate this issue and improve performance. In Fig. <ref type="figure" target="#fig_7">5</ref>, the ground truth and estimated velocity fields for a test case in the ShapeNet Car are reported. Note how the range of the relative L2 error in Fig. <ref type="figure" target="#fig_7">5c</ref> is significantly smaller than the ranges in Figs. <ref type="figure" target="#fig_8">4c -6c</ref>. This is likely due to the denser, larger point clouds over which ψ(x) is defined. Note also how larger errors are concentrated in the areas surrounding the outline of the car. Small discontinuities in the estimated field with respect to ground truth can be noticed in Fig. <ref type="figure" target="#fig_7">5b</ref>, for example in the bottom right section: just like for φ(x), we believe that smoothing the estimated field ψ(x) can further reduce the prediction error.</p><p>An example of the interpretability offered by Fengbo is given in Fig. <ref type="figure" target="#fig_9">7</ref>. Q ′ , the multivector in output of the 3D Clifford FNO module, is processed by the the 2 Clifford Physics blocks to obtain 2 multivector P ′ and V ′ , of which we extract the scalar part φ(x) and the vector part ψ(x), respectively. Note that we are still dealing with full grade multivectors defined over the entire domain D, but for the sake of visualisation we only plot the scalar and vector component masked by m s and m v , respectively. As the velocity and pressure field are processed, is it possible to have a visual intuition on how they are being transformed into the final estimate. As the quantities plotted are scalars and vectors throughout, they carry physical meaning and cannot be interpreted as anything else but pressure and velocity fields, therefore we can claim that Fengbo is a whitebox model. This concept of interpretable convergence is analogous to that presented in <ref type="bibr">Pepe et al. (2024a)</ref> for protein structures and in <ref type="bibr">Pepe et al. (2024d)</ref> for camera poses. </p><formula xml:id="formula_17">O(N SC + N S 2 )* ✓ ✓ Galerkin Cao (2021) global O(N D 2 ) ✓ ✓ MeshGraphNet Pfaff et al. (2020) local-global O(N d) ✓ ✓ GNO Li et al. (2020b) global O(N d) ✓ ✓ FNO Li et al. (2020a) global O(N log N ) ✗ ✓ Geo-FNO Li et al. (2020a) global O(N log N ) ✓ ✓ GINO Li et al. (2024) local-global O(N log N + N d) ✓ ✓ Fengbo [ours] local-global O(N log N ) ✗ ✓ g</formula><p>Fengbo has a computational complexity of O(N log N ) (see Table <ref type="table" target="#tab_4">4</ref>): the embedding into a 3D volume has complexity O(N ), and the limiting component on the computational complexity is given by the Clifford FNO module, with complexity O(N log N ). Moreover, Fengbo's accuracy is minimally impacted by smaller grid resolutions, making it robust to coarses discretisations and hence discretisation convergent (see Ablation Study in Appendix D).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">CONCLUSIONS</head><p>We introduced Fengbo, a Neural Operator pipeline able to solve large-scale, 3D PDEs over complex shapes which sits entirely in 3D Clifford Algebra. With Fengbo, we combine the descriptive power of Neural Operators with the inductive bias and interpretability of networks in Clifford Algebra to obtain a compact pipeline that is able to estimate multiple physical quantities both accurately and at once, without extra computational overhead.</p><p>We reported results on the two 3D CFD datasets available, ShapeNet Car and Ahmed Body, yielding a test error lower than most previously reported NO models. We are able to do so with a model with about 60% fewer parameters and with reduced computational complexity compared to graphand transformer-based models. Moreover, we also estimate jointly the velocity field, leveraging exclusively geometrical information of Ω D . Fengbo is thus a lightweight, expressive and accurate pipeline entirely in 3D Euclidean space.</p><p>Limitations. Due to limited computational resources, we could not test deeper, larger versions of our proposed architecture, which caps at 42 million parameters. Fengbo might struggle when applied on less informative datasets (e.g. fewer physical variables, lack of geometrical information) that do not allow for the construction of full-grade multivectors. A Clifford algebra of size n can be defined over a scalar field and a set of n independent basis vectors {e i } i=1,...n . We indicate a generic closed subalgebra with G(p, q, r) or alternatively G(p, q, r), with n = p + q + r. A closed subalgebra G(p, q, r) has p basis vectors that square to 1, q basis vectors that square to -1 and r basis vectors that square to 0.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 THE GEOMETRIC PRODUCT</head><p>Elements in a GA are called multivectors. Elements of any type can be added or multiplied together. Each element has a grade associated with it. By grade we define the dimension of the hyperplane an object specifies. e.g. scalars are grade 0, vectors are grade 1, bivectors are grade 2, etc. Clifford algebra is also known as Geometric algebra because of the geometric product. The geometric product between two vectors is given by ab = a • b + a ∧ b (13) in which the scalar (or inner) product a • b is the usual scalar product of linear algebra equal to the cosine of the angle between a and b, while the wedge (or outer) product a ∧ b produces a bivector (e.g. an oriented plane). The geometric product between vectors is hence the sum of a scalar and a bivector, that have different grade. Any multivector of a unique grade r that can be defined as A = a 1 ∧ a 2 ∧ ... ∧ a r is called a blade.</p><p>The reversion operator for a multivector is given by Ã. The reverse of a scalar is equal to the scalar itself and the reverse of a vector is equal to the vector itself. For a multivector, we have that</p><formula xml:id="formula_18">(AB) ˜= B Ã (A + B) ˜= Ã + B (<label>14</label></formula><formula xml:id="formula_19">)</formula><p>The general rule to reverse a r-blade is given by Ãr = (-1) r(r-1) 2</p><p>A r (15) The geometric product between a multivector and its reverse gives the squared magnitude: |A| 2 = ⟨A Ã⟩ 0 . The reversion operator can be used to define the inverse of a multivector as</p><formula xml:id="formula_20">A -1 = Ã |A| 2 (16)</formula><p>It can be easily shown that</p><formula xml:id="formula_21">A -1 A = 1 when A Ã is a scalar.</formula><p>The grade projector operator is denoted by ⟨A⟩ r , where r is the grade we want to extract from A. This comes from the fact that a multivector in an n dimensional algebra can be written as</p><formula xml:id="formula_22">A = n i=0 ⟨A⟩ i (17)</formula><p>The dual of a multivector is defined as A * = AI -1 n (18) where I n is called the pseudoscalar, defined as I n = e 1 ∧ e 2 ∧ ... ∧ e n . The pseudoscalar is the highest grade element in a GA. The product of grade-n pseudoscalar I n and grade-r multivector A r is a grade-(n -r) multivector, and is termed the duality transformation. The pseudoscalar interchanges inner and outer products:</p><formula xml:id="formula_23">A r • (B s I n ) = ⟨A r B s I n ⟩ |r-(n-s)| = ⟨A r B s I n ⟩ n-(r+s) = ⟨A r B s ⟩ r+s I n = A r ∧ B s I n (19) A.</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">CLIFFORD ALGEBRA OF THE PLANE AND OF SPACE</head><p>The Clifford algebra of the Euclidean plane is denoted by G(2, 0, 0), with two basis vectors e 1 , e 2 . Being an n = 2 dimensional GA (since p + q + r = 2 + 0 + 0 = 2 = n), it is spanned by 2 2 = 4 elements, namely a scalar, two vectors e 1 , e 2 and the bivector e 1 e 2 = e 1 ∧ e 2 . G(2, 0, 0) includes the concept of complex numbers, since the pseudoscalar of this algebra I = e 1 ∧ e 2 = e 1 e 2 = e 12 squares to -1, since I 2 = e 2 12 = e 12 e 12 = (e 1 e 2 )(e 1 e 2 ) = -(e 1 e 1 )(e 2 e 2 ) = -1. A scalar plus a bivector can be seen as a representation of a complex number, since Z = a + Ib ≡ a + ιb, where ι is the imaginary unit. Similarly, if X = ae 1 + be 2 = e 1 (a + bI) = e 1 Z.</p><p>Adding a third basis vector e 3 we form G(3, 0, 0), the GA of Euclidean space, which is what we employed in this paper. It has 2 3 = 8 elements, a scalar, three vectors, three bivectors (e 12 , e 23 , e 13 ) and one trivector (e 123 = e 1 ∧ e 2 ∧ e 3 = I 3 , the pseudoscalar). The GA of space includes quaternion algebra, since a quaternion q = w + ai + bj + ck can be represented as a multivector A = w + ae 12 + be 13 + ce 23 .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B IMPLEMENTATION DETAILS</head><p>Details of the Fengbo architecture are shown in Fig. <ref type="figure" target="#fig_10">8</ref>. The 3D Clifford Geometry block (Fig. <ref type="figure" target="#fig_10">8a</ref>) consists of 3 3D convolutional layers with kernel size 5×5×5. The first 2 convolutions are followed by a group normalisation layer and a GeLU activation function. The block yields multivectors with progressively increasing number of channels C g = {1, 2, 4}.  An example of the geometric interpretability of the intermediate outputs of Fengbo is given in Fig. <ref type="figure" target="#fig_11">9</ref>.</p><p>Multivector P , containing a scalar, vector and bivector component, is processed by the 3D Clifford Geometry block to obtain the 4-channel-multivector Q. We employ a grayscale colormap for scalar quantities, i.e. scalar and trivector components, and jet and rainbow colormaps for the vector and bivector components, respectively. The input shape multivector P built from the dataset is scattered within the [-1, 1] volume, bounded by the tanh activation function. Elements of different grades are mixed, as can be noticed from the appearance of trivector components. The sequence of convolutions makes the 3D multivectors progressively denser. The last multivector Q P , with 4-channels, is unbounded due to the lack of an activation function and fed into the 3D Clifford FNO. Each channel shows how different grade elements in the volume cluster to form different shapes, more or less aligned in a certain direction. While far from the original car shape, these blobs indeed represent scalar, vectors, bivectors and trivectors in 3D space: the vector components shown, for example, cannot be interpreted as anything else than coordinates of 3D point clouds precisely because of our choice of embedding. Similar considerations can be made for V and Q V .</p><p>Fig <ref type="figure" target="#fig_10">8b</ref> shows the 3D Clifford Physics block. It contains the same layers as the 3D Clifford Geometry block, but with a decreasing number of channels C p = {2, 1, 1}, as shown in Fig. <ref type="figure" target="#fig_9">7</ref>, and a different meaning attached to the multivector representation, where the scalar and vector part represent the pressure field ϕ(x) and the velocity field ψ(x). The implementation of a 2D equivalent to our 3D Fengbo pipeline is straightforward, as detailed in Table <ref type="table" target="#tab_7">5</ref>. By projecting the convolutional operations from 3D to 2D and operating within either G(2, 0, 0) or G(0, 2, 0), we achieve a fully analogous approach for 2D problems with targets that include scalar fields or 2D vector fields. Besides, just like Fengbo 3D is not limited to the task of 3D flow estimation, Fengbo 2D is not limited to 2D flows, but it can be extended to any 2D PDE that establishes a mapping from the geometry to the physics of the problem. G(2, 0, 0), G(0, 2, 0) 4 We can consider the 2D Fengbo as a simpler subcase of the 3D case, since its 3D implementation presents several more challenges, namely:</p><formula xml:id="formula_24">C × M × M × D O(N log N ), N = M 2 2D Clifford</formula><p>• 6-dimensional tensors in 3D, with shape B×C×M ×M ×M ×D, where B is the batch size, C is the number of channels, M is the grid resolution and D is the algebra dimensionality as opposed to 5-dimensional tensors in 2D, with shape B ×C ×M ×M ×D, which require significantly less memory and allow for larger model sizes. • Larger algebra dimensionality, D = 2 3 = 8 elements in G(3, 0, 0), namely 1 scalar, 1 trivector, 3 vectors and 3 bivectors, as opposed to the 2D case with D = 4, with 1 scalar, 1 bivector and 2 vectors. This has implications in the sparsity of the input tensors and in their memory requirements, which negatively impact convergence. • Significantly higher computational complexity, since it stays the same for both cases, namely O(N log N ), but with N = M 3 for the 3D case and N = M 2 for the 2D case.</p><p>Moving to 2D would allow for a larger discretisation that can preserve a higher level of detail at a fraction of the computational cost.</p><p>Moreover, handling 3D datasets with the proposed pipeline inherently includes the capability to process 2D datasets of <ref type="bibr">Li et al. (2020a)</ref>; <ref type="bibr" target="#b52">Wu et al. (2024)</ref>. This is shown in Table <ref type="table" target="#tab_9">6</ref>. When processing instances in ShapeNet Car and Ahmed Body, we: 1) sample points from the unstructured meshes; 2) discretise the irregular point clouds onto regular grids and 3) embed them in multivector form. Datasets like AirFRANS, which also contains unstructured meshes, would be processed in the same way. All the remaining 6 datasets fall into data structures which are intermediate steps of the pipeline we established with Fengbo: point clouds, like the Elasticity dataset, can be directly discretised onto regular grids and embedded into multivector form, regular grids of the Plasticity, Airfoil and Pipe datastes can be simply embedded as multivectors, as already demonstrated in <ref type="bibr" target="#b3">Brandstetter et al. (2022)</ref>; <ref type="bibr">Pepe et al. (2024b)</ref>, and structured meshes of the Navier-Stokes and Darcy datasets can be processed like their unstructured counterparts, demonstrating Fengbo's generalisability to 2D cases. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C TRAINING DETAILS</head><p>Fengbo was trained on 3 NVIDIA A100 GPUs with 40GB RAM. It was trained for 100 epochs with a batch size of 3, for a total of approximately 24 compute hours. We employed the Adam optimiser to update the model's weights with default parameters of β 1 = 0.9, β 2 = 0.999. We adopted a learning rate of 10 -4 , reduced on plateau by a factor of 2 with patience on the validation loss set to 8 epochs. The loss we minimised for the ShapeNet Car dataset is</p><formula xml:id="formula_25">L = αL P + βL V + ∥ϕ -φ∥ 1<label>(20)</label></formula><p>with parameters α = 5, β = 1 picked empirically to weight the pressure component more, since it was harder to regress. A similar loss was employed for the Ahmed Body dataset:</p><formula xml:id="formula_26">L = αL P + β∥r -r∥ 1 + ∥ϕ -φ∥ 1<label>(21)</label></formula><p>but with α = 1, β = 1 and r being the Reynolds number embedded as the trivector component of the output, i.e. ⟨R ′ ⟩ 3 = (m p r)e 123 , where R ′ refers to the second output of the network, P ′ being the first. No velocity information is provided. The L1 norm term on pressure was added to further penalise large deviations of φ, the estimated pressure field with respect to ground truth.</p><p>We employed elastic net regularisation, with λ 1 = 10 -5 lasso regularisation coefficient and λ 2 = 10 -4 ridge regularisation coefficient, to encourage group selection of correlated features and reduce overfitting, which we found to be significant over such small training sets. For training, input geometries are normalised in the range [-1, 1], vector velocity fields are normalised in the range [0, 1] and pressure fields are unit normalised by subtracting their mean and dividing them by their variance. Test metrics are measured over denormalised quantities to yield physically meaningful errors. The impact of grid size on Fengbo's accuracy is shown in Table <ref type="table" target="#tab_10">7</ref>. We train and test on volumes with the same resolution. It can be noted that, by reducing the number of voxels by 87.5% (from M = 80 to M = 40), i.e. significantly reducing the level of details in our input shape, Fengbo still yields a test error only 4% higher for the ShapeNet Car dataset and 4.5% higher for the Ahmed Body dataset. We can hence claim discretisation convergence.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D ABLATION STUDY</head><p>Since the 3D Clifford FNO is Fengbo's key component, we study the impact of its parameters. In Fig. <ref type="figure" target="#fig_12">10</ref> we report the ablations over the number channels C within the FNO for the two datasets and for the relative L 2 norm over pressure and velocity fields ϕ, ψ, respectively. For the velocity field of ShapeNet Car we tested two combinations of the weighting coefficients of the loss function α, β. The grid size is fixed to M = 80 and the number of blocks within the FNO is fixed to F = 2, while we test C = {5, 10, 15, 20, 25}. In all four presented scenarios, a higher number of hidden channels (i.e. a wider network) yields a steep decrease in the error at testing stage, proving how a larger version of Fengbo to that presented in the main body of this manuscript (C = 25) could further improve the quality of the PDE solution and demonstrating its scalability with respect to C.</p><p>In Fig. <ref type="figure" target="#fig_14">11</ref> we study the impact of the number of FNO blocks for the same four cases above. We tested F = 1, 2, 3, 4 by keeping C = 15 and M = 80. Also in this scenario, a deeper network corresponds to a more accurate estimation and hence scalability with respect to F . Note, in Fig. <ref type="figure" target="#fig_14">11a</ref>, a lower absolute minimum for relative L 2 norm over ϕ for the ShapeNet Car dataset of 8.25% with F = 4.</p><p>We then studied the impact of the number of Fourier modes m of the FNO. We tested m = {3, 6, 8, 10, 12, 14} by keeping F = 2 and C = 20. In this case results are less uniform across the four test cases, but we can conclude thar a larger number of modes often corresponds to similar if not worse performances, as already pointed out in <ref type="bibr" target="#b3">Brandstetter et al. (2022)</ref>.</p><p>The effect that these ablations have on the number of models parameters and size are reported in Fig. <ref type="figure" target="#fig_21">13</ref>. Note how the ablations on M are missing since they do not affect the model dimension.</p><p>The model size scales exponentially with respect to C, m, and linearly with respect to F . Fourier      modes have the biggest impact on the model parameters, with m = 14 corresponding to a ×13 increase with respect to the Fengbo presented in the main body of the text, without benefiting the test error. The number of blocks F , on the other hand, corresponds to a relatively milder increase in the model size while still providing a substantial improvement in performance. This proves our claim in the Limitation section, i.e. that a deeper network can likely correspond to more robust and accurate predictions than those shown in Table <ref type="table" target="#tab_2">2</ref>.   Lastly, the impact of the weighting coefficients of the loss function on Fengbo's accuracy is shown in Table <ref type="table" target="#tab_11">8</ref>. We fix the resolution to M = 80 and vary the weight attributed to different physical quantities in the loss function. β weights velocity for the ShapeNet Car dataset and the Reynolds number for the Ahmed Body dataset, while α weights the pressure in both. Note how the Reynolds number does not contribute in a significant way to the estimation of pressure in the Ahmed Body dataset. From Table <ref type="table" target="#tab_11">8</ref> we can conclude that the high accuracy accuracy of Fengbo stems also due to the joint estimation of variables, e.g regressing also on ψ can better constraint the values of ϕ can assume and vice versa. α, β can be thought as two parameters that mix quantities to be regressed and that can be tuned based on the specific requirements of problem to be tackled, e.g. which quantity we wish to prioritise. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E NOTES ON COMPUTATIONAL COMPLEXITY</head><p>As outlined in Section 2, we focused primarily on Neural Operators over Transformers due to the latter's significantly higher computational complexity, namely O(N 2 ). Transformers, albeit offering improved performances, introduce substantial challenges in terms of resource requirements and scalability. As a proof of that, we offer an analysis of the theorical complexity of the Fengbo model and compare it with the current state-of-the-art in Transformer-based solvers, the Transolver architecture <ref type="bibr" target="#b52">Wu et al. (2024)</ref>, which to the best of our knowledge is both the most accurate and the least computationally expensive Transformer architecture designed to solve PDEs. Albeit mostly validated over 2D problems, the Transolver has also been tested over one 3D dataset, namely ShapeNet Car.</p><p>More specifically, authors of <ref type="bibr" target="#b52">Wu et al. (2024)</ref> designed an ad hoc attention layer, the Physics-Attention layer, that operates on slices of the PDE domain Ω d . The reported computational complexity of such layer O(N SC + S 2 C), in which N is the number of meshes, S is the number of slices into which the domain is partitioned and C is the number of hidden channels of the model. The authors claim a quasi-linear complexity with respect to N . However, the overall complexity is heavily dependent on the choice of the model parameters S and C, and for large values of S and C, which is the setting for most of the experiments in <ref type="bibr" target="#b52">Wu et al. (2024)</ref>, it becomes sub-quadratic. We compare the model complexities for the 3D and the 2D case.</p><p>3D Case. Model complexities for the 3D case are shown in Fig. <ref type="figure" target="#fig_22">14</ref>. For the ShapeNet Car, specifically, the reported parameters are as follows: N ≃ 32000 meshes, S = 32 slices into which the car surface is partitioned and C = 256 channels. This places the computational complexity of the Transolver architecture for the ShapeNet Car dataset at the green marker shown in Fig. <ref type="figure" target="#fig_22">14a</ref>.</p><p>On the other hand, as shown in Table <ref type="table" target="#tab_4">4</ref>, we report a computational complexity of O(N log N ) for the Fengbo pipeline. In our approach, N is the dimension of the 3D regular grid, hence N = M 3 , with M being the grid resolution. This places the computational complexity of the Fengbo architecture for the ShapeNet Car dataset at the yellow marker shown in Fig. <ref type="figure" target="#fig_22">14a</ref>.</p><p>Such design choices yielded results shown in Fig. <ref type="figure" target="#fig_22">14b</ref>: the Transolver model attains a 1.4% decrease relative L 2 error over Fengbo, but at a computational complexity of two orders of magnitude larger. It is also worth noting that the experiment setting for Transolver followed the implementation of 3D-GeoCA <ref type="bibr" target="#b7">Deng et al. (2024)</ref>, which takes 789 samples for training and 100 samples for testing. On the other hand, we followed the approach of <ref type="bibr">GINO Li et al. (2024)</ref>, in which we retain 611 watertight meshes and employ 500 samples for training and 100 for testing, meaning that the Transolver, besides being computationally more complex, was also trained on 57.8% more samples. A similar claim can be made for the Ahmed Body dataset, not analysed in <ref type="bibr" target="#b52">Wu et al. (2024)</ref>, but whose complexity can still be studied. Assuming one point per mesh, i.e. N = 100000, and the same parameters configuration employed for the ShapeNet Car dataset, i.e. {S, C} = {32, 256}, the resulting complexity of the model also reaches O(10 8 ), corresponding to to the pink marker in Fig. <ref type="figure" target="#fig_22">14a</ref>. With Fengbo, the grid resolution is kept unchanged for the Ahmed Body dataset, which yields identical complexity to the ShapeNet Car dataset, demonstrating its robustness to larger mesh size.</p><p>2D Case. We compare the ablations presented in Appendix A of this manuscript with those presented in Appendix C of <ref type="bibr" target="#b52">Wu et al. (2024)</ref>. We compute the corresponding Fengbo complexity as the grid size varies, i.e. M = {40, 50, 60, 70, 80} and the corresponding Transolver complexity as N and C vary across datasets and as the number of slices S vary employed across ablations, namely S = {1, 8, <ref type="bibr">16, 32, 64, 96, 128, 256, 512, 1024}</ref>. This is summarised in Table <ref type="table">9</ref>. We then plot the</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: The Fengbo architecture. Irregular geometries are discretised into fixed-resolution volumes of multivectors, over which Fengbo operates. It consists of three steps: (i) The geometry blocks operate on the geometry of the PDEs domain, capture local features, ensure grade mixing and upsample the inputs; (ii) The Clifford FNO establishes a mapping between the PDEs geometry and their solution; (iii) The physics blocks operate on physical quantities, i.e. target of the regression. The entire architecture sits in 3D Clifford Algebra, guaranteeing interpretability.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head></head><label></label><figDesc>; Li et al. (2022a); Al-Aradi et al. (2022) also fall in the same category. DGM algorithms are trained to satisfy the differential operator, initial conditions, and boundary conditions, proving to be particularly suitable to deal with high-dimensional PDEs. As CFD structures are often represented via point clouds, several approach exist in the literature based on extensions of the PointNet Qi et al. (2017a); Kashefi et al. (2021); Nemati Taher &amp; Subas ¸ı (2024); Kashefi (2024) and PointNet++ architectures Qi et al. (2017b); Zhang &amp; Cao (2024); Gao et al. (2024). PointNet is a simple yet effective way to handle irregular point clouds without resorting to grids, but it fails at capturing global geometric context. PointNet++ mitigates this issue via multiscale data processing at the expense of a higher computational cost. Albeit versatile and flexible, PointNet-based methods are less accurate compared to more advanced PDE surrogates, including Transformer-based models Cao (2021); Li et al. (2022b); Xiao et al. (2023);</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: An example of pressure geometry multivector P . It has a scalar component (the binary mask m p ), 3 vector components (the 3D coordinates p) and 3 bivector components (the dual of the vectors n normal to points p).</figDesc><graphic coords="5,177.47,87.18,76.50,76.50" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head></head><label></label><figDesc>m p scalar + p 1 e 1 + p 2 e 2 + p 3 e 3 vector + B 12 e 12 + B 13 e 13 + B 23 e 23 bivector (3)</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: An example of velocity geometry multivector V . It has a scalar component (the binary mask m v ) and 3 vector components (the 3D coordinates v).</figDesc><graphic coords="6,253.55,93.05,78.21,61.38" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: (a) Ground truth pressure field (b) Fengbo's estimated pressure field and (c) their relative error for a test shape in the ShapeNet Car dataset.</figDesc><graphic coords="8,209.27,44.14,168.10,168.10" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head></head><label></label><figDesc>), which degenerates when dealing with complex geometry, as shown in<ref type="bibr" target="#b27">Li et al. (2024)</ref>;<ref type="bibr" target="#b52">Wu et al. (2024)</ref>, despite it being precisely designed to learn to deform irregular domains onto a regular grid to be fed into the FNO. Models such as ONO Xiao et al. (2023) and OFormer<ref type="bibr" target="#b26">Li et al. (2023)</ref>, which are transformer-based, also become unstable when dealing with large meshes, as found in<ref type="bibr" target="#b52">Wu et al. (2024)</ref>.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: (a) Ground truth velocity field (b) Fengbo's estimated velocity field and (c) their relative error for a test shape in the ShapeNet Car dataset.</figDesc><graphic coords="8,195.31,617.95,108.51,103.00" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: (a) Ground truth pressure field (b) Fengbo's estimated pressure field and (c) their relative error for a test shape in the Ahmed Body dataset.</figDesc><graphic coords="9,195.92,79.70,174.17,111.39" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: Intermediate outputs are interpretable physical quantities: Q ′ , the output of the 3D Clifford FNO block, is processed by N p = 2 3D Physics blocks in parallel to obtain φ(x) and ψ(x), the pressure and velocity fields, respectively.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>Figure 8 :</head><label>8</label><figDesc>Figure 8: The three components of the Fengbo architecture.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><head>Figure 9 :</head><label>9</label><figDesc>Figure 9: Intermediate layers outputs from P to Q P within the 3D Clifford Geometry block for a test sample in the ShapeNet Car dataset.</figDesc><graphic coords="16,331.56,144.50,52.15,52.31" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_12"><head>Figure 10 :</head><label>10</label><figDesc>Figure 10: Ablation on the number of hidden channels C.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_13"><head>RelativeRelative</head><label></label><figDesc>L2 norm -(ShapeNet Car) (a) Relative L2 norm on pressure, ShapeNet Car dataset versus F . Relative L2 norm on pressure, Ahmed Body dataset versus F . {α, β} = {5, 1}. L2 norm -(ShapeNet Car) (c) Relative L2 norm on velocity, ShapeNet Car dataset versus F . L2 norm -(ShapeNet Car) (d) Relative L2 norm on pressure, Ahmed Body dataset versus F . {α, β} = {1, 50}.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_14"><head>Figure 11 :</head><label>11</label><figDesc>Figure 11: Ablation on the number of FNO blocks F .</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_15"><head></head><label></label><figDesc>Relative L2 norm on pressure, Ahmed Body dataset versus m.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_16"><head></head><label></label><figDesc>L2 norm -(ShapeNet Car) (c) Relative L2 norm on velocity, ShapeNet Car dataset versus m. {α, β} = {5, 1}.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_17"><head></head><label></label><figDesc>L2 norm -(ShapeNet Car) (d) Relative L2 norm on pressure, Ahmed Body dataset versus F . {α, β} = {1, 50}.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_18"><head>Figure 12 :</head><label>12</label><figDesc>Figure 12: Ablation on the number of Fourier modes m.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_21"><head>Figure 13 :</head><label>13</label><figDesc>Figure 13: Number of parameters (M) and model size (MB) as a function of C, R, m.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_22"><head>Figure 14 :</head><label>14</label><figDesc>Figure 14: Computational complexity comparison of Fengbo and Transolver Wu et al. (2024) for the 3D case.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 1 :</head><label>1</label><figDesc>The three steps of the Fengbo pipeline.</figDesc><table><row><cell>Module</cell><cell>Input</cell><cell>Output</cell><cell>Purpose</cell></row><row><cell cols="2">Ng 1. 3D Clifford Geometry blocks P = {Pi} i=1</cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 2 :</head><label>2</label><figDesc>Training and testing errors in pressure and velocity prediction on the ShapeNet Car dataset. Fengbo results have been obtained with α, β = {5, 1} for pressure and with α, β = {1, 50} for velocity, see Appendix C.</figDesc><table><row><cell>Model</cell><cell cols="2">Pressure</cell><cell cols="2">Velocity</cell></row><row><cell></cell><cell>training error</cell><cell>testing error</cell><cell>training error</cell><cell>testing error</cell></row><row><cell>MLP</cell><cell>-</cell><cell>13.0</cell><cell>-</cell><cell>5.12</cell></row><row><cell>PointNet Qi et al. (2017a)</cell><cell>-</cell><cell>11.0</cell><cell>-</cell><cell>4.94</cell></row><row><cell>Graph U-Net Gao &amp; Ji (2019)</cell><cell>-</cell><cell>11.0</cell><cell>-</cell><cell>4.71</cell></row><row><cell>GraphSage Hamilton et al. (2017)</cell><cell>-</cell><cell>10.5</cell><cell>-</cell><cell>4.61</cell></row><row><cell>MeshGraph Net Pfaff et al. (2020)</cell><cell>-</cell><cell>7.81</cell><cell>-</cell><cell>3.54</cell></row><row><cell>GNO Li et al. (2020b)</cell><cell>18.2</cell><cell>18.8</cell><cell>-</cell><cell>3.83</cell></row><row><cell>Geo-FNO Li et al. (2020a)</cell><cell>10.8</cell><cell>15.9</cell><cell>-</cell><cell>16.7</cell></row><row><cell>UNet Ronneberger et al. (2015)</cell><cell>12.5</cell><cell>12.8</cell><cell>-</cell><cell>-</cell></row><row><cell>FNO Li et al. (2020a)</cell><cell>9.65</cell><cell>9.42</cell><cell>-</cell><cell>-</cell></row><row><cell>GINO (encoder-decoder) Li et al. (2024)</cell><cell>7.95</cell><cell>9.47</cell><cell>-</cell><cell>3.86</cell></row><row><cell>GINO (decoder) Li et al. (2024)</cell><cell>6.37</cell><cell>7.12</cell><cell>-</cell><cell>-</cell></row><row><cell>Fengbo [ours]</cell><cell>6.94</cell><cell>8.86</cell><cell>3.23</cell><cell>3.47</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 3 :</head><label>3</label><figDesc>Training and testing errors in pressure prediction on the Ahmed Body dataset.</figDesc><table><row><cell>035 Fengbo [ours]</cell></row></table><note><p>M.Gr.Net UNet FNO GINO (e-d) GINO (d) GINO (e-d), r= 0.025 GINO (d), r= 0.025 GINO (e-d)r= 0.035 GINO (d) r= 0.</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 4 :</head><label>4</label><figDesc>Comparison of different models. d is the maximum degree of the graph, D is the feature space dimensionality. *: See Appendix E.</figDesc><table><row><cell>Model</cell><cell>Range</cell><cell>Complexity</cell><cell>Irregular Grid</cell><cell>Discretisation Convergent</cell></row><row><cell>PointNet Qi et al. (2017a)</cell><cell>global</cell><cell>O(N )</cell><cell>✓</cell><cell>✗</cell></row><row><cell>PointNet++ Qi et al. (2017a)</cell><cell>local-global</cell><cell>O(N log N )</cell><cell>✓</cell><cell>✗</cell></row><row><cell>GNN Scarselli et al. (2008)</cell><cell>local</cell><cell>O(N d)</cell><cell>✓</cell><cell>✗</cell></row><row><cell>CNN LeCun et al. (1995)</cell><cell>local</cell><cell>O(N )</cell><cell>✗</cell><cell>✗</cell></row><row><cell>UNet Ronneberger et al. (2015)</cell><cell>global</cell><cell>O(N )</cell><cell>✗</cell><cell>✗</cell></row><row><cell>Transformers Vaswani (2017)</cell><cell>radius r</cell><cell>O(N 2 )</cell><cell>✓</cell><cell>✓</cell></row><row><cell>Transolver Wu et al. (2024)</cell><cell>local-global</cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head></head><label></label><figDesc>Zhongkai Hao, Bokai Lin, Zhijie Deng, and  Hang Su. Improved operator learning by orthogonal attention. arXiv preprint arXiv:2310.12487, 2023. Xinyao Zhang and Junzhe Cao. A Novel Point Cloud Deep Learning Method for Predicting Variable Airfoil Flow Fields. In 2024 43rd Chinese Control Conference (CCC), pp. 8381-8386. IEEE, 2024.</figDesc><table><row><cell>Published as a conference paper at ICLR 2025</cell></row><row><cell>Zipeng Xiao, A CLIFFORD ALGEBRA FUNDAMENTALS</cell></row><row><cell>A.1 DEFINING A SUBALGEBRA</cell></row></table><note><p><p>Besides, most implementations of Clifford Algebra networks rely on a tensor representation of multivectors, negatively impacting the model training speed.</p>Future work. Future work might include testing a larger Fengbo over multiple datasets, projecting it down to 2D for or extending its use for different PDEs to estimate jointly multiple physical quantities defined over complex, irregular domains.</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_7"><head>Table 5 :</head><label>5</label><figDesc>Comparison of Fengbo's 3D and 2D configurations.    </figDesc><table><row><cell>Model</cell><cell>Algebra</cell><cell>Dimensionality (D)</cell><cell>Tensor Shape</cell><cell>Complexity</cell><cell>Geometry Block</cell><cell>FNO</cell><cell>Physics Block</cell><cell>Normalisation</cell><cell>Targets</cell></row><row><cell>Fengbo 3D</cell><cell cols="2">G(3, 0, 0), G(0, 3, 0) 8</cell><cell cols="2">C ×M ×M ×M ×D O(N log N ), N =</cell><cell>3D Clifford Convolu-</cell><cell>3D full-grade Spec-</cell><cell>3D Clifford Convolu-</cell><cell>Group Normalisation</cell><cell>2 scalar fields, 1 3D</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>M 3</cell><cell>tions</cell><cell>tral Convolutions, 3</cell><cell>tions</cell><cell>3D</cell><cell>vector field, 1 3D</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>Fourier modes</cell><cell></cell><cell></cell><cell>bivector field.</cell></row><row><cell>Fengbo 2D</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_9"><head>Table 6 :</head><label>6</label><figDesc>Data representations and their processing steps with the Fengbo pipeline.</figDesc><table><row><cell></cell><cell>Unstructured Meshes</cell><cell>Point Clouds</cell><cell>Regular Grid</cell><cell>Structured Mesh</cell></row><row><cell>Datasets</cell><cell cols="4">ShapeNet Car, Ahmed Body (3D), AirFRANS (2D) Elasticity (2D) Plasticity, Airfoil, Pipe (2D) Navier-Stokes, Darcy (2D)</cell></row><row><cell>1. Sample points from mesh</cell><cell>✓</cell><cell>-</cell><cell>-</cell><cell>✓</cell></row><row><cell>2. Discretise onto regular grid</cell><cell>✓</cell><cell>✓</cell><cell>-</cell><cell>✓</cell></row><row><cell>3. Embed in multivector form</cell><cell>✓</cell><cell>✓</cell><cell>✓</cell><cell>✓</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_10"><head>Table 7 :</head><label>7</label><figDesc>Ablation on the impact of M .</figDesc><table><row><cell>Grid Size M</cell><cell>ShapeNet Car Pressure Velocity</cell><cell>Ahmed Body Pressure</cell></row><row><cell></cell><cell cols="2">training testing training testing training testing</cell></row><row><cell>40</cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_11"><head>Table 8 :</head><label>8</label><figDesc>Ablation on the impact of α, β.</figDesc><table><row><cell>α</cell><cell>β</cell><cell cols="4">ShapeNet Car Pressure Velocity</cell><cell cols="2">Ahmed Body Pressure</cell></row><row><cell></cell><cell></cell><cell cols="6">training testing training testing training testing</cell></row><row><cell>1</cell><cell>0</cell><cell>8.53</cell><cell>9.21</cell><cell>-</cell><cell>-</cell><cell>8.60</cell><cell>11.8</cell></row><row><cell>1</cell><cell>1</cell><cell>9.07</cell><cell>9.32</cell><cell>7.23</cell><cell>4.39</cell><cell>8.00</cell><cell>10.7</cell></row><row><cell>2</cell><cell>1</cell><cell>8.03</cell><cell>9.30</cell><cell>6.40</cell><cell>4.56</cell><cell>8.23</cell><cell>10.9</cell></row><row><cell>5</cell><cell>1</cell><cell>6.94</cell><cell>8.86</cell><cell>5.56</cell><cell>5.10</cell><cell>7.64</cell><cell>10.9</cell></row><row><cell cols="2">10 1</cell><cell>5.38</cell><cell>9.12</cell><cell>4.28</cell><cell>5.48</cell><cell>9.31</cell><cell>11.9</cell></row><row><cell>0</cell><cell>1</cell><cell>-</cell><cell>-</cell><cell>4.90</cell><cell>4.03</cell><cell>-</cell><cell>-</cell></row><row><cell>1</cell><cell>2</cell><cell>9.37</cell><cell>9.50</cell><cell>4.09</cell><cell>4.12</cell><cell>8.42</cell><cell>11.9</cell></row><row><cell>1</cell><cell>5</cell><cell>7.71</cell><cell>9.83</cell><cell>3.98</cell><cell>3.82</cell><cell>8.34</cell><cell>11.8</cell></row><row><cell cols="2">1 10</cell><cell>9.37</cell><cell>10.1</cell><cell>3.82</cell><cell>3.60</cell><cell>8.26</cell><cell>11.8</cell></row><row><cell cols="2">1 20</cell><cell>10.5</cell><cell>10.8</cell><cell>3.37</cell><cell>3.59</cell><cell>-</cell><cell>-</cell></row><row><cell cols="2">1 50</cell><cell>8.42</cell><cell>11.4</cell><cell>3.23</cell><cell>3.47</cell><cell>-</cell><cell>-</cell></row></table></figure>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>M S</head><p>Figure <ref type="figure">15</ref>: relative L 2 norm promotion versus computational complexity for Fengbo and Transolver's ablations.</p><p>relative L 2 norm promotion versus the resulting complexities for six 2D datasets (Darcy, Elasticity, Plasticity, Airfoil, Navier-Stokes and Pipes) and two 3D datasets (ShapeNet Car and Ahmed Body). The promotion is defined as P i = L i /L * , with L i the relative L 2 norm reported for the ith ablation and L * the overall minimum L 2 norm reported. We do so as different datasets might present very different ranges of L. This is shown in Fig. <ref type="figure">15</ref>, in which the markers represent different ablations and the curves are the resulting interpolations. Note how, even when compared to 2D datasets, Fengbo still operates at one order of magnitude below Transolver for the Elasticity dataset and at two orders of magnitude for the remaining five datasets. On top of that, the computational cost to lower L to the optimal value is also significantly lower for the Fengbo pipeline. Additionally, if Fengbo were to be tested in a 2D scenario, the value of N would likely be much smaller than 10 6 . </p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Extensions of the deep Galerkin method</title>
+		<author>
+			<persName><forename type="first">Ali</forename><surname>Al-Aradi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adolfo</forename><surname>Correia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Jardim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danilo</forename><surname>De Freitas Naiff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Saporito</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Applied Mathematics and Computation</title>
+		<imprint>
+			<biblScope unit="volume">430</biblScope>
+			<biblScope unit="page">127287</biblScope>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Neural operators for accelerating scientific simulations and design</title>
+		<author>
+			<persName><forename type="first">Kamyar</forename><surname>Azizzadenesheli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikola</forename><surname>Kovachki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zongyi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miguel</forename><surname>Liu-Schiaffini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jean</forename><surname>Kossaifi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anima</forename><surname>Anandkumar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nature Reviews Physics</title>
+		<imprint>
+			<biblScope unit="page" from="1" to="9" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Unsteady cylinder wakes from arbitrary bodies with differentiable physics-assisted neural network</title>
+		<author>
+			<persName><forename type="first">Shuvayan</forename><surname>Brahmachary</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nils</forename><surname>Thuerey</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Physical Review E</title>
+		<imprint>
+			<biblScope unit="volume">109</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page">55304</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">Johannes</forename><surname>Brandstetter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rianne</forename><surname>Van Den</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Max</forename><surname>Berg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jayesh K</forename><surname>Welling</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gupta</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2209.04934</idno>
+		<title level="m">Clifford neural layers for PDE modeling</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Choose a transformer: Fourier or galerkin</title>
+		<author>
+			<persName><forename type="first">Shuhao</forename><surname>Cao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="page" from="24924" to="24940" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">Giuseppe</forename><surname>Carleo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ignacio</forename><surname>Cirac</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyle</forename><surname>Cranmer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laurent</forename><surname>Daudet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maria</forename><surname>Schuld</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naftali</forename><surname>Tishby</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leslie</forename><surname>Vogt-Maranto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lenka</forename><surname>Zdeborová</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Machine learning and the physical sciences. Reviews of Modern Physics</title>
+		<imprint>
+			<biblScope unit="volume">91</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page">45002</biblScope>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Scientific machine learning through physics-informed neural networks: Where we are and what&apos;s next</title>
+		<author>
+			<persName><forename type="first">Salvatore</forename><surname>Cuomo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vincenzo</forename><surname>Schiano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Di</forename><surname>Cola</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabio</forename><surname>Giampaolo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gianluigi</forename><surname>Rozza</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maziar</forename><surname>Raissi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Francesco</forename><surname>Piccialli</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Scientific Computing</title>
+		<imprint>
+			<biblScope unit="volume">92</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page">88</biblScope>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Geometry-Guided Conditional Adaption for Surrogate Models of Large-Scale 3D PDEs on Arbitrary Geometries</title>
+		<author>
+			<persName><forename type="first">Jingyang</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingjian</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoyi</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoguang</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinwen</forename><surname>Ma</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Leo Dorst and Joan Lasenby. Guide to geometric algebra in practice</title>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Doran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Lasenby</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2003">2003. 2011</date>
+			<publisher>Springer Science &amp; Business Media</publisher>
+		</imprint>
+	</monogr>
+	<note>Geometric algebra for physicists</note>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Hongyang Gao and Shuiwang Ji. Graph u-nets</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Michael</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><forename type="middle">E</forename><surname>Friswell</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mottershead</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+		<imprint>
+			<date type="published" when="1995">1995. 2019</date>
+			<publisher>Springer</publisher>
+			<biblScope unit="page" from="2083" to="2092" />
+		</imprint>
+	</monogr>
+	<note>Finite element modelling</note>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Fast Reconstruction Method of 3d Flow Field Based on Attention-Enhanced Pointnet++</title>
+		<author>
+			<persName><forename type="first">Jingwei</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Donghui</forename><surname>Wang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Inductive representation learning on large graphs</title>
+		<author>
+			<persName><forename type="first">Will</forename><surname>Hamilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhitao</forename><surname>Ying</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jure</forename><surname>Leskovec</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="volume">30</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Gnot: A general neural operator transformer for operator learning</title>
+		<author>
+			<persName><forename type="first">Zhongkai</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengyang</forename><surname>Ying</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinpeng</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Songming</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ze</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Zhu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="12556" to="12569" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Introduction to Clifford&apos;s geometric algebra</title>
+		<author>
+			<persName><forename type="first">Eckhard</forename><surname>Hitzer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of the Society of Instrument and Control Engineers</title>
+		<imprint>
+			<biblScope unit="volume">51</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="338" to="350" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Simplifying and Generalising Equivariant Geometric Algebra Networks</title>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Hockey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxin</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joan</forename><surname>Lasenby</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The 9th conference on Applied Geometric Algebras in Computer Science and Engineering (AGACSE)</title>
+		<imprint>
+			<biblScope unit="page">2024</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Physics-informed machine learning</title>
+		<author>
+			<persName><forename type="first">George</forename><surname>Em Karniadakis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Ioannis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Kevrekidis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paris</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sifan</forename><surname>Perdikaris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Yang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nature Reviews Physics</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="422" to="440" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ali</forename><surname>Kashefi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Kolmogorov-Arnold</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Pointnet</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.02950</idno>
+		<title level="m">Deep learning for prediction of fluid fields on irregular geometries</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">A point-cloud deep learning framework for prediction of fluid flow fields on irregular geometries</title>
+		<author>
+			<persName><forename type="first">Ali</forename><surname>Kashefi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Davis</forename><surname>Rempe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leonidas</forename><forename type="middle">J</forename><surname>Guibas</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Physics of Fluids</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page">2021</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Neural operator: Learning maps between function spaces with applications to PDEs</title>
+		<author>
+			<persName><forename type="first">Nikola</forename><surname>Kovachki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zongyi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Burigede</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kamyar</forename><surname>Azizzadenesheli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaushik</forename><surname>Bhattacharya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Stuart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anima</forename><surname>Anandkumar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Machine Learning Research</title>
+		<imprint>
+			<biblScope unit="volume">24</biblScope>
+			<biblScope unit="issue">89</biblScope>
+			<biblScope unit="page" from="1" to="97" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Handout collection from a Cambridge University lecture course</title>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Lasenby</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Doran</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2001">2001</date>
+		</imprint>
+	</monogr>
+	<note>Physical applications of geometric algebra</note>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Applications of geometric algebra in physics and links with engineering</title>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Lasenby</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joan</forename><surname>Lasenby</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Geometric Algebra with Applications in Science and Engineering</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2001">2001</date>
+			<biblScope unit="page" from="430" to="457" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Convolutional networks for images, speech, and time series. The handbook of brain theory and neural networks</title>
+		<author>
+			<persName><forename type="first">Yann</forename><surname>Lecun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoshua</forename><surname>Bengio</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1995">1995. 1995</date>
+			<biblScope unit="volume">3361</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">The deep learning galerkin method for the general stokes equations</title>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wansuo</forename><surname>Duan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Scientific Computing</title>
+		<imprint>
+			<biblScope unit="volume">93</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page">5</biblScope>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zijie</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kazem</forename><surname>Meidani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amir</forename><surname>Barati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Farimani</forename></persName>
+		</author>
+		<idno type="arXiv">arXiv:2205.13671</idno>
+		<title level="m">Transformer for partial differential equations&apos; operator learning</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zongyi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikola</forename><surname>Kovachki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kamyar</forename><surname>Azizzadenesheli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Burigede</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaushik</forename><surname>Bhattacharya</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2010.08895</idno>
+		<title level="m">Andrew Stuart, and Anima Anandkumar. Fourier neural operator for parametric partial differential equations</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zongyi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikola</forename><surname>Kovachki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kamyar</forename><surname>Azizzadenesheli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Burigede</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaushik</forename><surname>Bhattacharya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Stuart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anima</forename><surname>Anandkumar</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2003.03485</idno>
+		<title level="m">Neural operator: Graph kernel network for partial differential equations</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Fourier neural operator with learned deformations for PDEs on general geometries</title>
+		<author>
+			<persName><forename type="first">Zongyi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><forename type="middle">Zhengyu</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Burigede</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anima</forename><surname>Anandkumar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Machine Learning Research</title>
+		<imprint>
+			<biblScope unit="volume">24</biblScope>
+			<biblScope unit="issue">388</biblScope>
+			<biblScope unit="page" from="1" to="26" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Geometryinformed neural operator for large-scale 3d PDEs</title>
+		<author>
+			<persName><forename type="first">Zongyi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikola</forename><surname>Kovachki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Choy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jean</forename><surname>Kossaifi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shourya</forename><surname>Otta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Amin Nabian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maximilian</forename><surname>Stadler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Hundt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kamyar</forename><surname>Azizzadenesheli</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<analytic>
+		<title level="a" type="main">PDErefiner: Achieving accurate long rollouts with neural PDE solvers</title>
+		<author>
+			<persName><forename type="first">Phillip</forename><surname>Lippe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bas</forename><surname>Veeling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paris</forename><surname>Perdikaris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Turner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johannes</forename><surname>Brandstetter</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">36</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<analytic>
+		<title level="a" type="main">The finite difference method at arbitrary irregular grids and its application in applied mechanics</title>
+		<author>
+			<persName><forename type="first">Tadeusz</forename><surname>Liszka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Janusz</forename><surname>Orkisz</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Computers &amp; Structures</title>
+		<imprint>
+			<biblScope unit="volume">11</biblScope>
+			<biblScope unit="issue">1-2</biblScope>
+			<biblScope unit="page" from="83" to="95" />
+			<date type="published" when="1980">1980</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<monogr>
+		<title level="m" type="main">Multiscale neural operator: Learning fast and grid-independent PDE solvers</title>
+		<author>
+			<persName><forename type="first">Björn</forename><surname>Lütjens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Catherine</forename><forename type="middle">H</forename><surname>Crawford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Campbell D Watson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dava</forename><surname>Hill</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Newman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2207.11417</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Farhad Nemati Taher and Abdussamet Subas ¸ı. A fast three-dimensional flow field prediction around bluff bodies using deep learning</title>
+	</analytic>
+	<monogr>
+		<title level="j">Physics of Fluids</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page">2024</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Clifford Group Equivariant Neural Network Layers for Protein Structure Prediction</title>
+		<author>
+			<persName><forename type="first">Alberto</forename><surname>Pepe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sven</forename><surname>Buchholz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joan</forename><surname>Lasenby</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Northern Lights Deep Learning Conference</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="205" to="211" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<analytic>
+		<title level="a" type="main">GA-ReLU: an activation function for Geometric Algebra Networks applied to 2D Navier-Stokes PDEs</title>
+		<author>
+			<persName><forename type="first">Alberto</forename><surname>Pepe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sven</forename><surname>Buchholz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joan</forename><surname>Lasenby</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR 2024 Workshop on AI4DifferentialEquations In Science</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b34">
+	<monogr>
+		<title level="m" type="main">STAResNet: a Network in Spacetime Algebra to solve Maxwell&apos;s PDEs</title>
+		<author>
+			<persName><forename type="first">Alberto</forename><surname>Pepe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sven</forename><surname>Buchholz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joan</forename><surname>Lasenby</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2408.13619</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b35">
+	<analytic>
+		<title level="a" type="main">CGAPoseNet+ GCAN: A Geometric Clifford Algebra Network for Geometry-aware Camera Pose Regression</title>
+		<author>
+			<persName><forename type="first">Alberto</forename><surname>Pepe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joan</forename><surname>Lasenby</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sven</forename><surname>Buchholz</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF Winter Conference on Applications of Computer Vision</title>
+		<meeting>the IEEE/CVF Winter Conference on Applications of Computer Vision</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="6593" to="6603" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b36">
+	<analytic>
+		<title level="a" type="main">A general finite difference method for arbitrary meshes</title>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Perrone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Kao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Computers &amp; Structures</title>
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="45" to="57" />
+			<date type="published" when="1975">1975</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Learning meshbased simulation with graph networks</title>
+		<author>
+			<persName><forename type="first">Tobias</forename><surname>Pfaff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meire</forename><surname>Fortunato</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alvaro</forename><surname>Sanchez-Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><forename type="middle">W</forename><surname>Battaglia</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2010.03409</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Pointnet: Deep learning on point sets for 3d classification and segmentation</title>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Charles R Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaichun</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leonidas</forename><forename type="middle">J</forename><surname>Mo</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Guibas</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE conference on computer vision and pattern recognition</title>
+		<meeting>the IEEE conference on computer vision and pattern recognition</meeting>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="652" to="660" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Pointnet++: Deep hierarchical feature learning on point sets in a metric space</title>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Ruizhongtai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Yi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leonidas</forename><forename type="middle">J</forename><surname>Guibas</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">30</biblScope>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Machine learning of linear differential equations using Gaussian processes</title>
+		<author>
+			<persName><forename type="first">Maziar</forename><surname>Raissi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paris</forename><surname>Perdikaris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">George</forename><forename type="middle">Em</forename><surname>Karniadakis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Computational Physics</title>
+		<imprint>
+			<biblScope unit="volume">348</biblScope>
+			<biblScope unit="page" from="683" to="693" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Physics-informed neural networks: A deep learning framework for solving forward and inverse problems involving nonlinear partial differential equations</title>
+		<author>
+			<persName><forename type="first">Maziar</forename><surname>Raissi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paris</forename><surname>Perdikaris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">George</forename><forename type="middle">E</forename><surname>Karniadakis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Computational physics</title>
+		<imprint>
+			<biblScope unit="volume">378</biblScope>
+			<biblScope unit="page" from="686" to="707" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Rima Alaifari, Siddhartha Mishra, and Emmanuel de Bézenac. Convolutional neural operators for robust and accurate learning of PDEs</title>
+		<author>
+			<persName><forename type="first">Bogdan</forename><surname>Raonic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberto</forename><surname>Molinaro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><forename type="middle">De</forename><surname>Ryck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tobias</forename><surname>Rohner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Francesca</forename><surname>Bartolucci</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b43">
+	<analytic>
+		<title level="a" type="main">U-net: Convolutional networks for biomedical image segmentation</title>
+		<author>
+			<persName><forename type="first">Olaf</forename><surname>Ronneberger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philipp</forename><surname>Fischer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Brox</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Medical image computing and computer-assisted intervention-MICCAI 2015: 18th international conference</title>
+		<meeting><address><addrLine>Munich, Germany</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2015">October 5-9, 2015. 2015</date>
+			<biblScope unit="volume">18</biblScope>
+			<biblScope unit="page" from="234" to="241" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Clifford Neural Operators on Atmospheric Data Influenced Partial Differential Equations</title>
+		<author>
+			<persName><forename type="first">Sujit</forename><surname>Roy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rajat</forename><surname>Shinde</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">E</forename><surname>Phillips</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ankur</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji</forename><surname>Leong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manil</forename><surname>Maskey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rahul</forename><surname>Ramachandran</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">12th International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Geometric clifford algebra networks</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Ruhe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Jayesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Max</forename><surname>De Keninck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johannes</forename><surname>Welling</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Brandstetter</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="29306" to="29337" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Clifford group equivariant neural networks</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Ruhe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johannes</forename><surname>Brandstetter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Forré</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">36</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b47">
+	<monogr>
+		<title level="m" type="main">The graph neural network model</title>
+		<author>
+			<persName><forename type="first">Franco</forename><surname>Scarselli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marco</forename><surname>Gori</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ah</forename><surname>Chung Tsoi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Markus</forename><surname>Hagenbuchner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriele</forename><surname>Monfardini</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2008">2008</date>
+			<biblScope unit="volume">20</biblScope>
+			<biblScope unit="page" from="61" to="80" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b48">
+	<analytic>
+		<title level="a" type="main">DGM: A deep learning algorithm for solving partial differential equations</title>
+		<author>
+			<persName><forename type="first">Justin</forename><surname>Sirignano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Konstantinos</forename><surname>Spiliopoulos</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of computational physics</title>
+		<imprint>
+			<biblScope unit="volume">375</biblScope>
+			<biblScope unit="page" from="1339" to="1364" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b49">
+	<analytic>
+		<title level="a" type="main">Solver-in-the-loop: Learning from differentiable physics to interact with iterative PDE-solvers</title>
+		<author>
+			<persName><forename type="first">Kiwon</forename><surname>Um</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Brand</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yun</forename><surname>Raymond Fei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philipp</forename><surname>Holl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nils</forename><surname>Thuerey</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="6111" to="6122" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b50">
+	<analytic>
+		<title level="a" type="main">Attention is all you need</title>
+		<author>
+			<persName><surname>Vaswani</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b51">
+	<monogr>
+		<title level="m" type="main">Integrating physics-based modeling with machine learning: A survey</title>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Willard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaowei</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoming</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Steinbach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vipin</forename><surname>Kumar</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2003.04919</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="1" to="34" />
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b52">
+	<monogr>
+		<author>
+			<persName><forename type="first">Haixu</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huakun</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianmin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingsheng</forename><surname>Long</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.02366</idno>
+		<title level="m">Transolver: A fast transformer solver for pdes on general geometries</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b53">
+	<monogr>
+		<title level="m" type="main">We study the impact of four components of the Fengbo pipeline, namely the grid size M , the number of hidden channels in the 3D Clifford FNO module C, the number of blocks in the FNO F and the number of modes in the FNO m</title>
+		<author>
+			<persName><forename type="first">Pipeline</forename><surname>Scalability</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>
